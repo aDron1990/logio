@@ -20,6 +20,7 @@ private:
     void windowProc() noexcept;
     void gameProc() noexcept;
     void updateWindow() noexcept;
+    void renderUI() noexcept;
     void render() noexcept;
 
 private:

@@ -14,6 +14,9 @@ auto fs = cmrc::res::get_filesystem();
 
 int main(int argc, char* argv[])
 {
+    auto owlFile = fs.open("resources/images/owl.jpg");
+    auto fontFile = fs.open("resources/fonts/ubuntu.ttf");
+
     auto videoMode = sf::VideoMode{800, 500};
     auto window = sf::RenderWindow{videoMode, "sfml"};
     window.setVerticalSyncEnabled(true);
@@ -25,11 +28,11 @@ int main(int argc, char* argv[])
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.Fonts->Clear();
-    io.Fonts->AddFontFromFileTTF("ubuntu.ttf", 16);
+    auto fontCfg = ImFontConfig{};
+    fontCfg.FontDataOwnedByAtlas = false;
+    io.Fonts->AddFontFromMemoryTTF((void*)fontFile.begin(), fontFile.size(), 16, &fontCfg);
     ImGui::SFML::UpdateFontTexture();
     setImguiTheme();
-
-    auto owlFile = fs.open("resources/images/owl.jpg");
 
     auto texture = sf::Texture{};
     texture.loadFromMemory(owlFile.begin(), owlFile.size());
@@ -47,6 +50,13 @@ int main(int argc, char* argv[])
             ImGui::SFML::ProcessEvent(window, event);
             if (event.type == sf::Event::Closed) 
                 window.close();
+            if (event.type == sf::Event::Resized)
+            {
+                auto widht = static_cast<float>(event.size.width);
+                auto height = static_cast<float>(event.size.height);
+                auto visibleArea = sf::FloatRect{0.f, 0.f, widht, height};
+                window.setView(sf::View{visibleArea});
+            }
         }
         ImGui::SFML::Update(window, deltaClock.restart());
         

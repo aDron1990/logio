@@ -11,20 +11,20 @@ find_package(imgui CONFIG REQUIRED)
 find_package(ImGui-SFML CONFIG REQUIRED)
 
 add_executable(logio 
-	main.cpp
-	imgui_theme.hpp
+	source/main.cpp
+	source/imgui_theme.hpp
 )
 
 cmrc_add_resource_library(res
 	ALIAS logio::res
 	NAMESPACE res
 	resources/images/owl.jpg
+	resources/fonts/ubuntu.ttf
 )
 
 target_link_libraries(logio PRIVATE
 	logio::res
 	sfml-system 
-#	sfml-main 
 	sfml-network 
 	sfml-graphics 
 	sfml-window

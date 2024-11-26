@@ -5,11 +5,14 @@
 
 Game::Game() : 
     m_window{sf::VideoMode::getDesktopMode(), "logio", 0}, 
-    m_resources{cmrc::res::get_filesystem()}
+    m_resources{cmrc::res::get_filesystem()}, 
+    m_grid { 2, 2 }
 {
     m_window.setVerticalSyncEnabled(true);
     IMGUI_CHECKVERSION();
     ImGui::SFML::Init(m_window);
+
+    m_grid.get(1, 1) = 1;
 
     auto& io = ImGui::GetIO();
     auto fontFile = m_resources.open("resources/fonts/ubuntu.ttf");
@@ -59,7 +62,7 @@ void Game::updateWindow() noexcept
 
 void Game::renderUI() noexcept
 {
-    ImGui::ShowDemoWindow();
+    //ImGui::ShowDemoWindow();
 }
 
 void Game::render() noexcept

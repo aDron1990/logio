@@ -9,10 +9,13 @@ find_package(CMakeRC CONFIG REQUIRED)
 find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(ImGui-SFML CONFIG REQUIRED)
+find_package(LibCDS CONFIG REQUIRED)
 
 add_executable(logio 
 	source/main.cpp
 	source/imgui_theme.hpp
+	source/game.cpp
+	source/game.hpp
 )
 
 cmrc_add_resource_library(res
@@ -30,6 +33,7 @@ target_link_libraries(logio PRIVATE
 	sfml-window
 	imgui::imgui
 	ImGui-SFML::ImGui-SFML
+	LibCDS::cds
 )
 
 

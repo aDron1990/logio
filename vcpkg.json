@@ -1,6 +1,7 @@
 {
   "dependencies": [
     "boost",
+    "cmakerc",
     {
       "name": "imgui",
       "features": [
@@ -9,6 +10,6 @@
     },
     "imgui-sfml",
     "sfml",
-    "cmakerc"
+    "libcds"
   ]
 }

@@ -1,0 +1,14 @@
+{
+  "dependencies": [
+    "boost",
+    {
+      "name": "imgui",
+      "features": [
+        "docking-experimental"
+      ]
+    },
+    "imgui-sfml",
+    "sfml",
+    "cmakerc"
+  ]
+}

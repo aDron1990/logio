@@ -1,18 +1,13 @@
 #include "game.hpp"
 #include "imgui_theme.hpp"
 
-#include <ranges>
-
 Game::Game() : 
     m_window{sf::VideoMode::getDesktopMode(), "logio", 0}, 
-    m_resources{cmrc::res::get_filesystem()}, 
-    m_grid { 2, 2 }
+    m_resources{cmrc::res::get_filesystem()}
 {
     m_window.setVerticalSyncEnabled(true);
     IMGUI_CHECKVERSION();
     ImGui::SFML::Init(m_window);
-
-    m_grid.get(1, 1) = 1;
 
     auto& io = ImGui::GetIO();
     auto fontFile = m_resources.open("resources/fonts/ubuntu.ttf");
@@ -22,6 +17,14 @@ Game::Game() :
     io.Fonts->AddFontFromMemoryTTF((void*)fontFile.begin(), fontFile.size(), 16, &fontCfg);
     ImGui::SFML::UpdateFontTexture();
     setImguiTheme();
+
+    m_field.addTo(0, 0);
+    m_field.addTo(1, 0);
+    m_field.addTo(2, 0);
+    m_field.addTo(3, 0);
+
+    auto atlasFile = m_resources.open("resources/images/atlas.png");
+    m_atlas.loadFromMemory(atlasFile.begin(), atlasFile.size());
 }
 
 void Game::run() 
@@ -69,7 +72,7 @@ void Game::render() noexcept
 {
     m_window.clear();
 
-    
+    m_field.draw(m_window, sf::Sprite{m_atlas, {0, 0, 8, 8}});
 
     ImGui::SFML::Render(m_window);
     m_window.display();

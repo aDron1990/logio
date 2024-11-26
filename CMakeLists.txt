@@ -16,12 +16,14 @@ add_executable(logio
 	source/game.cpp
 	source/game.hpp
 	source/grid.hpp
+	source/field.cpp
+	source/field.hpp
 )
 
 cmrc_add_resource_library(res
 	ALIAS logio::res
 	NAMESPACE res
-	resources/images/owl.jpg
+	resources/images/atlas.png
 	resources/fonts/ubuntu.ttf
 )
 

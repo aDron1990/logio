@@ -1,6 +1,6 @@
 #pragma once
 
-#include "grid.hpp"
+#include "field.hpp"
 
 #include <SFML/Graphics.hpp>
 #include <cmrc/cmrc.hpp>
@@ -10,16 +10,7 @@
 #include <thread>
 #include <atomic>
 
-#include <shared_mutex>
-#include <memory>
-
 CMRC_DECLARE(res);
-
-struct Cell
-{
-    std::shared_mutex mutex;
-    std::unique_ptr<int> data;
-};
 
 class Game
 {
@@ -40,6 +31,7 @@ private:
     sf::RenderWindow m_window;
     cmrc::embedded_filesystem m_resources;
     sf::Clock m_frameDeltaClock;
+    sf::Texture m_atlas;
 
-    Grid<int> m_grid;
+    Field m_field;
 };

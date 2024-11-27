@@ -23,9 +23,14 @@ public:
 
     void draw(sf::RenderTarget& renderTarget, sf::Sprite sprite);
     void addTo(size_t x, size_t y);
+    void removeFrom(size_t x, size_t y);
+    std::optional<sf::Vector2i> mapCoordsTpGrid(sf::Vector2f worldPos);
 
+private:
+    void drawGridLines(sf::RenderTarget& renderTarget);
 
 private:
     Grid<Cell> m_grid;
+    sf::RenderTexture m_gridBakeTexture;
 
 };

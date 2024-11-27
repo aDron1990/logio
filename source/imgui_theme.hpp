@@ -4,10 +4,8 @@
 
 inline void setImguiTheme()
 {
-    auto& styl = ImGui::GetStyle();
-    //styl.ChildRounding = 0.0f;
-    //styl.TabRounding = 0.0f;
-    auto* colors = styl.Colors;
+    auto& Style = ImGui::GetStyle();
+    auto* colors = Style.Colors;
     colors[ImGuiCol_Text] = ImVec4(0.95f, 0.96f, 0.98f, 1.00f);
     colors[ImGuiCol_TextDisabled] = ImVec4(0.36f, 0.42f, 0.47f, 1.00f);
     colors[ImGuiCol_WindowBg] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);

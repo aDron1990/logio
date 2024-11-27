@@ -12,6 +12,7 @@ find_package(ImGui-SFML CONFIG REQUIRED)
 
 add_executable(logio 
 	source/main.cpp
+	source/defines.hpp
 	source/imgui_theme.hpp
 	source/game.cpp
 	source/game.hpp

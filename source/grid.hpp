@@ -64,19 +64,25 @@ public:
     Grid(const Grid&) = delete;
     Grid& operator=(const Grid&) = delete;
 
-    const T& get(size_t x, size_t y) const
+    const Cell& get(size_t x, size_t y) const
     {
         assert(x < m_sizeX && y < m_sizeY);
         auto index = coordsToIndex(x, y);
-        return m_data[index].data;
+        return m_data[index];
     }
 
-    T& get(size_t x, size_t y)
+    Cell& get(size_t x, size_t y)
     {
         assert(x < m_sizeX && y < m_sizeY);
         auto index = coordsToIndex(x, y);
-        return m_data[index].data;
+        return m_data[index];
     }
+
+    size_t size() const noexcept { return m_size; };
+
+    size_t sizeX() const noexcept { return m_sizeX; };
+
+    size_t sizeY() const noexcept { return m_sizeY; };
 
     Cell* begin() noexcept
     { 

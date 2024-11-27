@@ -22,6 +22,7 @@ private:
     void windowProc() noexcept;
     void gameProc() noexcept;
     void updateWindow() noexcept;
+    void updateCamera() noexcept;
     void renderUI() noexcept;
     void render() noexcept;
 
@@ -31,6 +32,11 @@ private:
     sf::RenderWindow m_window;
     cmrc::embedded_filesystem m_resources;
     sf::Clock m_frameDeltaClock;
+    sf::Time m_frameDeltaTime;
+    float m_frameDelta;
+    sf::Clock m_updateDeltaClock;
+    sf::Time m_updateDeltaTime;
+    float m_updateDelta;
     sf::Texture m_atlas;
 
     Field m_field;

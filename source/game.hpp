@@ -3,12 +3,14 @@
 #include "field.hpp"
 
 #include <SFML/Graphics.hpp>
+#include <SFML/OpenGL.hpp>
 #include <cmrc/cmrc.hpp>
 #include <imgui.h>
 #include <imgui-SFML.h>
 
 #include <thread>
 #include <atomic>
+#include <vector>
 
 CMRC_DECLARE(res);
 
@@ -33,11 +35,14 @@ private:
     cmrc::embedded_filesystem m_resources;
     sf::Clock m_frameDeltaClock;
     sf::Time m_frameDeltaTime;
-    float m_frameDelta;
+    float m_frameDelta{};
     sf::Clock m_updateDeltaClock;
     sf::Time m_updateDeltaTime;
-    float m_updateDelta;
+    float m_updateDelta{};
     sf::Texture m_atlas;
+    ImTextureID m_atlasUI;
+    std::vector<sf::Sprite> m_elementSprites;
+    int m_currentId{};
 
     Field m_field;
 };

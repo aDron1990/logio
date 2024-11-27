@@ -21,8 +21,8 @@ class Field
 public:
     Field();
 
-    void draw(sf::RenderTarget& renderTarget, sf::Sprite sprite);
-    void addTo(size_t x, size_t y);
+    void draw(sf::RenderTarget& renderTarget, const std::vector<sf::Sprite>& sprites);
+    void addTo(size_t x, size_t y, int id);
     void removeFrom(size_t x, size_t y);
     std::optional<sf::Vector2i> mapCoordsTpGrid(sf::Vector2f worldPos);
 

@@ -2,6 +2,7 @@
 #include "imgui_theme.hpp"
 
 #include <print>
+#include <ranges>
 
 Game::Game() : 
     m_window{sf::VideoMode::getDesktopMode(), "logio", 0}, 
@@ -24,13 +25,15 @@ Game::Game() :
     ImGui::SFML::UpdateFontTexture();
     setImguiTheme();
 
-    m_field.addTo(0, 0);
-    m_field.addTo(1, 0);
-    m_field.addTo(2, 0);
-    m_field.addTo(3, 0);
-
     auto atlasFile = m_resources.open("resources/images/atlas.png");
     m_atlas.loadFromMemory(atlasFile.begin(), atlasFile.size());
+    m_elementSprites.push_back(sf::Sprite{m_atlas, {0, 0, 8, 8}});
+    m_elementSprites.push_back(sf::Sprite{m_atlas, {9, 0, 8, 8}});
+
+    m_field.addTo(0, 0, 0);
+    m_field.addTo(1, 0, 1);
+    m_field.addTo(2, 0, 0);
+    m_field.addTo(3, 0, 0);
 }
 
 void Game::run() 
@@ -87,7 +90,7 @@ void Game::updateWindow() noexcept
                 if (!gridPos) break;
                 if (event.mouseButton.button == sf::Mouse::Left)
                 {
-                    m_field.addTo(gridPos->x, gridPos->y);
+                    m_field.addTo(gridPos->x, gridPos->y, m_currentId);
                 }
                 else
                     m_field.removeFrom(gridPos->x, gridPos->y);
@@ -136,17 +139,38 @@ void Game::renderUI() noexcept
 {
     static auto flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar;
 
-    auto sprite = sf::Sprite{m_atlas, {0, 0, 8, 8}};
-    sprite.setScale(sprite.getScale() * 10.0f);
+    auto sprites = m_elementSprites;
+    std::transform(sprites.begin(), sprites.end(), sprites.begin(),
+        [](auto& sprite)
+        {
+            sprite.setScale(sprite.getScale() * 10.0f);
+            return sprite;
+        });
     auto size = ImVec2{};
     size.y = sf::VideoMode::getDesktopMode().height;
-    size.x = 100;
+    size.x = 90 + 16;
     ImGui::SetNextWindowSize(size);
+    ImGui::SetNextWindowPos({100, 0});
+    ImGui::SetNextWindowBgAlpha(0.8f);
+    ImGui::Begin("sprites", nullptr, flags);
 
-    ImGui::Begin("image", nullptr, flags);
-    ImGui::Image(sprite);
-    ImGui::SetNextItemWidth(sprite.getScale().x * 8);
-    ImGui::SetWindowPos({0, 0});
+    for (auto sprite : sprites | std::views::enumerate)
+    {
+        auto cursor = ImGui::GetCursorPos();
+        ImGui::PushID(std::get<0>(sprite));
+        if (ImGui::InvisibleButton("spriteButton", {90, 90}))
+        {
+            m_currentId = std::get<0>(sprite);
+        }
+        ImGui::PopID();
+        ImGui::SetCursorPos(cursor);
+        if (m_currentId == std::get<0>(sprite))
+            ImGui::DrawRectFilled({0, 0, 90, 90}, sf::Color{0x00FFFFFF});
+        ImGui::SetCursorPos({cursor.x + 5, cursor.y + 5});
+        ImGui::Image(std::get<1>(sprite));
+        ImGui::SetCursorPos({cursor.x, cursor.y * 2 + 90});
+    }
+
     ImGui::End();
 }
 
@@ -154,7 +178,7 @@ void Game::render() noexcept
 {
     m_window.clear();
 
-    m_field.draw(m_window, sf::Sprite{m_atlas, {0, 0, 8, 8}});
+    m_field.draw(m_window, m_elementSprites);
 
     ImGui::SFML::Render(m_window);
     m_window.display();

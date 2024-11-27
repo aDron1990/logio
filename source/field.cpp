@@ -11,11 +11,11 @@ Field::Field() : m_grid{100, 100}
     drawGridLines(m_gridBakeTexture);
 }
 
-void Field::addTo(size_t x, size_t y)
+void Field::addTo(size_t x, size_t y, int id)
 {
     auto& cell = m_grid.get(x, y);
     std::unique_lock lock{cell.data.mutex};
-    m_grid.get(x, y).data.data.reset(new int{1});
+    m_grid.get(x, y).data.data.reset(new int{id});
 }
 
 void Field::removeFrom(size_t x, size_t y)
@@ -25,13 +25,14 @@ void Field::removeFrom(size_t x, size_t y)
     m_grid.get(x, y).data.data.reset();
 }
 
-void Field::draw(sf::RenderTarget& renderTarget, sf::Sprite sprite)
+void Field::draw(sf::RenderTarget& renderTarget, const std::vector<sf::Sprite>& sprites)
 {
     renderTarget.draw(sf::Sprite{m_gridBakeTexture.getTexture()});
     for (auto& cell : m_grid)
     {
         std::shared_lock lock{cell.data.mutex};
         if (cell.data.data == nullptr) continue;
+        auto sprite = sprites[*cell.data.data];
         sprite.setPosition({(float)cell.x * SPRITE_SIZE, (float)cell.y * SPRITE_SIZE});
         renderTarget.draw(sprite);
     }

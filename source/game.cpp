@@ -31,12 +31,6 @@ Game::Game() :
     m_signalSprite = sf::Sprite{m_atlas, {0, 0, 16, 16}};
     m_elementSprites.push_back(sf::Sprite{m_atlas, {17, 0, 16, 16}});
     m_elementSprites.push_back(sf::Sprite{m_atlas, {34, 0, 16, 16}});
-    
-
-    m_field.addTo(0, 0, 0);
-    m_field.addTo(1, 0, 1);
-    m_field.addTo(2, 0, 0);
-    m_field.addTo(3, 0, 0);
 }
 
 void Game::run() 
@@ -77,8 +71,10 @@ void Game::updateWindow() noexcept
             case sf::Event::KeyPressed: 
             {
                 if (event.key.scancode == sf::Keyboard::Scancode::Escape) m_running = false;
-                break;
+                if (event.key.scancode == sf::Keyboard::Scancode::Q) m_currentRotation = rotateCCW(m_currentRotation);
+                if (event.key.scancode == sf::Keyboard::Scancode::E) m_currentRotation = rotateCW(m_currentRotation);
             }
+            break;
             case sf::Event::MouseWheelScrolled:
             {
                 if (io.WantCaptureMouse) break;
@@ -92,9 +88,13 @@ void Game::updateWindow() noexcept
         }
     }
 
+    if (!io.WantCaptureMouse && sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && gridPos)
+    {
+        m_field.sendSignal(gridPos->x, gridPos->y);
+    }
     if (!io.WantCaptureMouse && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) && gridPos)
     {
-        m_field.addTo(gridPos->x, gridPos->y, m_currentId);
+        m_field.addTo(gridPos->x, gridPos->y, m_currentId, m_currentRotation);
     }
     if (!io.WantCaptureMouse && sf::Mouse::isButtonPressed(sf::Mouse::Button::Right) && gridPos)
     {
@@ -191,8 +191,16 @@ void Game::render() noexcept
     {
         std::shared_lock lock{cell.data.mutex};
         if (cell.data.data == nullptr) continue;
-        auto sprite = m_elementSprites[*cell.data.data];
-        sprite.setPosition({(float)cell.x * SPRITE_SIZE, (float)cell.y * SPRITE_SIZE});
+        if (cell.data.data->currentSignal > 0)
+        {
+            auto sprite = m_signalSprite;
+            sprite.setPosition({(float)cell.x * SPRITE_SIZE, (float)cell.y * SPRITE_SIZE});
+            m_window.draw(sprite);
+        }
+        auto sprite = m_elementSprites[cell.data.data->typeId];
+        sprite.setOrigin({SPRITE_SIZE / 2, SPRITE_SIZE / 2});
+        sprite.setPosition({(float)cell.x * SPRITE_SIZE + SPRITE_SIZE / 2, (float)cell.y * SPRITE_SIZE + SPRITE_SIZE / 2});
+        sprite.setRotation(rotationToAngle(cell.data.data->rotation));
         m_window.draw(sprite);
     }
 
@@ -203,8 +211,10 @@ void Game::render() noexcept
     if (gridPos)
     {
         auto ghost = m_elementSprites[m_currentId];
-        ghost.setPosition({(float)gridPos->x * SPRITE_SIZE, (float)gridPos->y * SPRITE_SIZE});
         ghost.setColor({255, 255, 255, 150});
+        ghost.setOrigin({SPRITE_SIZE / 2, SPRITE_SIZE / 2});
+        ghost.setPosition({(float)gridPos->x * SPRITE_SIZE + SPRITE_SIZE / 2, (float)gridPos->y * SPRITE_SIZE + SPRITE_SIZE / 2});
+        ghost.setRotation(rotationToAngle(m_currentRotation));
         m_window.draw(ghost);
     }
 

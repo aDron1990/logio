@@ -19,6 +19,8 @@ add_executable(logio
 	source/grid.hpp
 	source/field.cpp
 	source/field.hpp
+	source/rotation.hpp
+	source/element_data.hpp
 )
 
 cmrc_add_resource_library(res

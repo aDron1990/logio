@@ -6,11 +6,11 @@
 
 Field::Field() : m_grid{100, 100} {}
 
-void Field::addTo(size_t x, size_t y, int id)
+void Field::addTo(size_t x, size_t y, uint8_t id, Rotation rotation)
 {
     auto& cell = m_grid.get(x, y);
     std::unique_lock lock{cell.data.mutex};
-    m_grid.get(x, y).data.data.reset(new int{id});
+    m_grid.get(x, y).data.data.reset(new ElementData{.rotation = rotation, .typeId = id});
 }
 
 void Field::removeFrom(size_t x, size_t y)
@@ -18,6 +18,14 @@ void Field::removeFrom(size_t x, size_t y)
     auto& cell = m_grid.get(x, y);
     std::unique_lock lock{cell.data.mutex};
     m_grid.get(x, y).data.data.reset();
+}
+
+void Field::sendSignal(size_t x, size_t y) 
+{
+    auto& cell = m_grid.get(x, y);
+    std::unique_lock lock{cell.data.mutex};
+    if (m_grid.get(x, y).data.data == nullptr) return;
+    m_grid.get(x, y).data.data->currentSignal++;
 }
 
 std::optional<sf::Vector2i> Field::mapCoordsTpGrid(sf::Vector2f worldPos)

@@ -44,6 +44,7 @@ private:
     std::vector<sf::Sprite> m_elementSprites;
     sf::Sprite m_signalSprite;
     std::atomic_int m_currentId{};
+    Rotation m_currentRotation{Rotation::Up};
 
     Field m_field;
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "field.hpp"
+#include "element.hpp"
 
 #include <SFML/Graphics.hpp>
 #include <SFML/OpenGL.hpp>
@@ -23,6 +24,7 @@ public:
 private:
     void windowProc() noexcept;
     void gameProc() noexcept;
+    void updateField() noexcept;
     void updateWindow() noexcept;
     void updateCamera() noexcept;
     void renderUI() noexcept;
@@ -40,8 +42,8 @@ private:
     sf::Time m_updateDeltaTime;
     float m_updateDelta{};
     sf::Texture m_atlas;
-    ImTextureID m_atlasUI;
     std::vector<sf::Sprite> m_elementSprites;
+    std::vector<std::unique_ptr<Element>> m_elementTypes;
     sf::Sprite m_signalSprite;
     std::atomic_int m_currentId{};
     Rotation m_currentRotation{Rotation::Up};

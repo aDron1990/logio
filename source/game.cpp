@@ -2,8 +2,12 @@
 #include "imgui_theme.hpp"
 #include "defines.hpp"
 
+#include "elements/wire.hpp"
+#include "elements/not.hpp"
+
 #include <print>
 #include <ranges>
+#include <execution>
 
 Game::Game() : 
     m_window{sf::VideoMode::getDesktopMode(), "logio", 0}, 
@@ -31,6 +35,9 @@ Game::Game() :
     m_signalSprite = sf::Sprite{m_atlas, {0, 0, 16, 16}};
     m_elementSprites.push_back(sf::Sprite{m_atlas, {17, 0, 16, 16}});
     m_elementSprites.push_back(sf::Sprite{m_atlas, {34, 0, 16, 16}});
+
+    m_elementTypes.emplace_back(std::make_unique<Wire>(sf::Sprite{m_atlas, {17, 0, 16, 16}}));
+    m_elementTypes.emplace_back(std::make_unique<Not>(sf::Sprite{m_atlas, {34, 0, 16, 16}}));
 }
 
 void Game::run() 
@@ -142,13 +149,6 @@ void Game::renderUI() noexcept
 {
     static auto flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar;
 
-    auto sprites = m_elementSprites;
-    std::transform(sprites.begin(), sprites.end(), sprites.begin(),
-        [](auto& sprite)
-        {
-            sprite.setScale(sprite.getScale() * 5.0f);
-            return sprite;
-        });
     auto size = ImVec2{};
     size.y = sf::VideoMode::getDesktopMode().height;
     size.x = 90 + 16;
@@ -157,20 +157,22 @@ void Game::renderUI() noexcept
     ImGui::SetNextWindowBgAlpha(0.8f);
     ImGui::Begin("sprites", nullptr, flags);
 
-    for (auto sprite : sprites | std::views::enumerate)
+    for (auto element : m_elementTypes | std::views::enumerate)
     {
         auto cursor = ImGui::GetCursorPos();
-        ImGui::PushID(std::get<0>(sprite));
+        ImGui::PushID(std::get<0>(element));
         if (ImGui::InvisibleButton("spriteButton", {90, 90}))
         {
-            m_currentId = std::get<0>(sprite);
+            m_currentId = std::get<0>(element);
         }
         ImGui::PopID();
         ImGui::SetCursorPos(cursor);
-        if (m_currentId == std::get<0>(sprite))
+        if (m_currentId == std::get<0>(element))
             ImGui::DrawRectFilled({0, 0, 90, 90}, sf::Color{0xF0F0F0FF});
         ImGui::SetCursorPos({cursor.x + 5, cursor.y + 5});
-        ImGui::Image(std::get<1>(sprite));
+        auto sprite = std::get<1>(element)->getSprite();
+        sprite.setScale(sprite.getScale() * 5.0f);
+        ImGui::Image(sprite);
         ImGui::SetCursorPos({cursor.x, cursor.y * 2 + 90});
     }
 
@@ -208,7 +210,7 @@ void Game::render() noexcept
     auto worldPos = m_window.mapPixelToCoords(pos);
     auto gridPos = m_field.mapCoordsTpGrid(worldPos);
 
-    if (gridPos)
+    if (!ImGui::GetIO().WantCaptureMouse && gridPos)
     {
         auto ghost = m_elementSprites[m_currentId];
         ghost.setColor({255, 255, 255, 150});
@@ -228,5 +230,26 @@ void Game::gameProc() noexcept
     {
         m_updateDeltaTime = m_updateDeltaClock.restart();
         m_updateDelta = ((float)m_updateDeltaTime.asMicroseconds() / 1000.0f);
+        updateField();
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
+}
+
+void Game::updateField() noexcept
+{
+    std::for_each(m_field.begin(), m_field.end(), [this](auto& elementData)
+    {
+        std::shared_lock lock{elementData.data.mutex};
+        if (elementData.data.data == nullptr) return;
+        auto& element = m_elementTypes[elementData.data.data->typeId];
+        element->onUpdate(m_field, elementData);
+    });
+    std::for_each(m_field.begin(), m_field.end(),
+    [this](auto& elementData)
+    {
+        std::unique_lock lock{elementData.data.mutex};
+        if (elementData.data.data == nullptr) return;
+        elementData.data.data->currentSignal = elementData.data.data->nextSignal;
+        elementData.data.data->nextSignal = 0;
+    });
 }

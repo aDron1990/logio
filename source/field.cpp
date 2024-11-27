@@ -25,7 +25,7 @@ void Field::sendSignal(size_t x, size_t y)
     auto& cell = m_grid.get(x, y);
     std::unique_lock lock{cell.data.mutex};
     if (m_grid.get(x, y).data.data == nullptr) return;
-    m_grid.get(x, y).data.data->currentSignal++;
+    m_grid.get(x, y).data.data->nextSignal++;
 }
 
 std::optional<sf::Vector2i> Field::mapCoordsTpGrid(sf::Vector2f worldPos)

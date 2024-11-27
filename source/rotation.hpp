@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <utility>
 
 enum class Rotation : uint16_t
 {
@@ -19,11 +20,11 @@ constexpr Rotation rotateCW(Rotation rotation) noexcept
 {
     switch (rotation)
     {
-        case Rotation::Up: return Rotation::Right; break;
-        case Rotation::Right: return Rotation::Down; break;
-        case Rotation::Down: return Rotation::Left; break;
-        case Rotation::Left: return Rotation::Up; break;
-        default: return Rotation::Up; break;
+        case Rotation::Up: return Rotation::Right;
+        case Rotation::Right: return Rotation::Down;
+        case Rotation::Down: return Rotation::Left;
+        case Rotation::Left: return Rotation::Up;
+        default: return Rotation::Up;
     }
 }
 
@@ -31,10 +32,22 @@ constexpr Rotation rotateCCW(Rotation rotation) noexcept
 {
     switch (rotation)
     {
-        case Rotation::Up: return Rotation::Left; break;
-        case Rotation::Right: return Rotation::Up; break;
-        case Rotation::Down: return Rotation::Right; break;
-        case Rotation::Left: return Rotation::Down; break;
-        default: return Rotation::Up; break;
+        case Rotation::Up: return Rotation::Left;
+        case Rotation::Right: return Rotation::Up;
+        case Rotation::Down: return Rotation::Right;
+        case Rotation::Left: return Rotation::Down;
+        default: return Rotation::Up;
+    }
+}
+
+constexpr std::pair<int, int> rotationToVector(Rotation rotation) noexcept 
+{
+    switch (rotation)
+    {
+        case Rotation::Up: return std::make_pair(0, -1);
+        case Rotation::Right: return std::make_pair(1, 0);
+        case Rotation::Down: return std::make_pair(0, 1);
+        case Rotation::Left: return std::make_pair(-1, 0);
+        default: return std::make_pair(0, 0);
     }
 }

@@ -21,6 +21,12 @@ add_executable(logio
 	source/field.hpp
 	source/rotation.hpp
 	source/element_data.hpp
+	source/element.hpp
+
+	source/elements/wire.cpp
+	source/elements/wire.hpp
+	source/elements/not.cpp
+	source/elements/not.hpp
 )
 
 cmrc_add_resource_library(res
@@ -40,4 +46,4 @@ target_link_libraries(logio PRIVATE
 	ImGui-SFML::ImGui-SFML
 )
 
-
+target_include_directories(logio PRIVATE source/)

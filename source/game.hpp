@@ -42,7 +42,6 @@ private:
     sf::Time m_updateDeltaTime;
     float m_updateDelta{};
     sf::Texture m_atlas;
-    std::vector<sf::Sprite> m_elementSprites;
     std::vector<std::unique_ptr<Element>> m_elementTypes;
     sf::Sprite m_signalSprite;
     std::atomic_int m_currentId{};

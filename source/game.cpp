@@ -33,8 +33,6 @@ Game::Game() :
     auto atlasFile = m_resources.open("resources/images/atlas.png");
     m_atlas.loadFromMemory(atlasFile.begin(), atlasFile.size());
     m_signalSprite = sf::Sprite{m_atlas, {0, 0, 16, 16}};
-    m_elementSprites.push_back(sf::Sprite{m_atlas, {17, 0, 16, 16}});
-    m_elementSprites.push_back(sf::Sprite{m_atlas, {34, 0, 16, 16}});
 
     m_elementTypes.emplace_back(std::make_unique<Wire>(sf::Sprite{m_atlas, {17, 0, 16, 16}}));
     m_elementTypes.emplace_back(std::make_unique<Not>(sf::Sprite{m_atlas, {34, 0, 16, 16}}));
@@ -199,7 +197,7 @@ void Game::render() noexcept
             sprite.setPosition({(float)cell.x * SPRITE_SIZE, (float)cell.y * SPRITE_SIZE});
             m_window.draw(sprite);
         }
-        auto sprite = m_elementSprites[cell.data.data->typeId];
+        auto sprite = m_elementTypes[cell.data.data->typeId]->getSprite();
         sprite.setOrigin({SPRITE_SIZE / 2, SPRITE_SIZE / 2});
         sprite.setPosition({(float)cell.x * SPRITE_SIZE + SPRITE_SIZE / 2, (float)cell.y * SPRITE_SIZE + SPRITE_SIZE / 2});
         sprite.setRotation(rotationToAngle(cell.data.data->rotation));
@@ -212,7 +210,7 @@ void Game::render() noexcept
 
     if (!ImGui::GetIO().WantCaptureMouse && gridPos)
     {
-        auto ghost = m_elementSprites[m_currentId];
+        auto ghost = m_elementTypes[m_currentId]->getSprite();
         ghost.setColor({255, 255, 255, 150});
         ghost.setOrigin({SPRITE_SIZE / 2, SPRITE_SIZE / 2});
         ghost.setPosition({(float)gridPos->x * SPRITE_SIZE + SPRITE_SIZE / 2, (float)gridPos->y * SPRITE_SIZE + SPRITE_SIZE / 2});

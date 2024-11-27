@@ -1,3 +1,3 @@
 #pragma once
 
-constexpr auto SPRITE_SIZE = 8;
+constexpr auto SPRITE_SIZE = 16;

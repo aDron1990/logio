@@ -49,7 +49,7 @@ void Field::drawGridLines(sf::RenderTarget& renderTarget)
 std::optional<sf::Vector2i> Field::mapCoordsTpGrid(sf::Vector2f worldPos)
 {
     auto in_range = [](auto val, auto min, auto max) { return min <= val && val <= max; };
-    if (!in_range(worldPos.x, 0, m_grid.sizeX() * 8) || !in_range(worldPos.y, 0, m_grid.sizeY() * 8)) return std::nullopt;
+    if (!in_range(worldPos.x, 0, m_grid.sizeX() * SPRITE_SIZE) || !in_range(worldPos.y, 0, m_grid.sizeY() * SPRITE_SIZE)) return std::nullopt;
     return sf::Vector2i
     {
         static_cast<int>(worldPos.x / SPRITE_SIZE), 

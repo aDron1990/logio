@@ -1,5 +1,6 @@
 #include "game.hpp"
 #include "imgui_theme.hpp"
+#include "defines.hpp"
 
 #include <print>
 #include <ranges>
@@ -27,8 +28,10 @@ Game::Game() :
 
     auto atlasFile = m_resources.open("resources/images/atlas.png");
     m_atlas.loadFromMemory(atlasFile.begin(), atlasFile.size());
-    m_elementSprites.push_back(sf::Sprite{m_atlas, {0, 0, 8, 8}});
-    m_elementSprites.push_back(sf::Sprite{m_atlas, {9, 0, 8, 8}});
+    m_signalSprite = sf::Sprite{m_atlas, {0, 0, 16, 16}};
+    m_elementSprites.push_back(sf::Sprite{m_atlas, {17, 0, 16, 16}});
+    m_elementSprites.push_back(sf::Sprite{m_atlas, {34, 0, 16, 16}});
+    
 
     m_field.addTo(0, 0, 0);
     m_field.addTo(1, 0, 1);
@@ -60,6 +63,11 @@ void Game::updateWindow() noexcept
 {
     auto& io = ImGui::GetIO();
     auto event = sf::Event{};
+
+    auto pos = sf::Mouse::getPosition();
+    auto worldPos = m_window.mapPixelToCoords(pos);
+    auto gridPos = m_field.mapCoordsTpGrid(worldPos);
+
     while (m_window.pollEvent(event))
     {
         ImGui::SFML::ProcessEvent(m_window, event);
@@ -81,23 +89,18 @@ void Game::updateWindow() noexcept
                 m_window.setView(view);
                 break;
             }
-            case sf::Event::MouseButtonPressed:
-            {
-                if (io.WantCaptureMouse) break;
-                auto pos = sf::Vector2i{event.mouseButton.x, event.mouseButton.y};
-                auto worldPos = m_window.mapPixelToCoords(pos);
-                auto gridPos = m_field.mapCoordsTpGrid(worldPos);
-                if (!gridPos) break;
-                if (event.mouseButton.button == sf::Mouse::Left)
-                {
-                    m_field.addTo(gridPos->x, gridPos->y, m_currentId);
-                }
-                else
-                    m_field.removeFrom(gridPos->x, gridPos->y);
-                break;
-            }
         }
     }
+
+    if (!io.WantCaptureMouse && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) && gridPos)
+    {
+        m_field.addTo(gridPos->x, gridPos->y, m_currentId);
+    }
+    if (!io.WantCaptureMouse && sf::Mouse::isButtonPressed(sf::Mouse::Button::Right) && gridPos)
+    {
+        m_field.removeFrom(gridPos->x, gridPos->y);
+    }
+
     ImGui::SFML::Update(m_window, m_frameDeltaTime);
 }
 
@@ -143,14 +146,14 @@ void Game::renderUI() noexcept
     std::transform(sprites.begin(), sprites.end(), sprites.begin(),
         [](auto& sprite)
         {
-            sprite.setScale(sprite.getScale() * 10.0f);
+            sprite.setScale(sprite.getScale() * 5.0f);
             return sprite;
         });
     auto size = ImVec2{};
     size.y = sf::VideoMode::getDesktopMode().height;
     size.x = 90 + 16;
     ImGui::SetNextWindowSize(size);
-    ImGui::SetNextWindowPos({100, 0});
+    ImGui::SetNextWindowPos({0, 0});
     ImGui::SetNextWindowBgAlpha(0.8f);
     ImGui::Begin("sprites", nullptr, flags);
 
@@ -165,7 +168,7 @@ void Game::renderUI() noexcept
         ImGui::PopID();
         ImGui::SetCursorPos(cursor);
         if (m_currentId == std::get<0>(sprite))
-            ImGui::DrawRectFilled({0, 0, 90, 90}, sf::Color{0x00FFFFFF});
+            ImGui::DrawRectFilled({0, 0, 90, 90}, sf::Color{0xF0F0F0FF});
         ImGui::SetCursorPos({cursor.x + 5, cursor.y + 5});
         ImGui::Image(std::get<1>(sprite));
         ImGui::SetCursorPos({cursor.x, cursor.y * 2 + 90});
@@ -180,6 +183,18 @@ void Game::render() noexcept
 
     m_field.draw(m_window, m_elementSprites);
 
+    auto pos = sf::Mouse::getPosition();
+    auto worldPos = m_window.mapPixelToCoords(pos);
+    auto gridPos = m_field.mapCoordsTpGrid(worldPos);
+
+    if (gridPos)
+    {
+        auto ghost = m_elementSprites[m_currentId];
+        ghost.setPosition({(float)gridPos->x * SPRITE_SIZE, (float)gridPos->y * SPRITE_SIZE});
+        ghost.setColor({255, 255, 255, 150});
+        m_window.draw(ghost);
+    }
+
     ImGui::SFML::Render(m_window);
     m_window.display();
 }
@@ -190,6 +205,5 @@ void Game::gameProc() noexcept
     {
         m_updateDeltaTime = m_updateDeltaClock.restart();
         m_updateDelta = ((float)m_updateDeltaTime.asMicroseconds() / 1000.0f);
-        
     }
 }

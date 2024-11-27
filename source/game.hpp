@@ -42,7 +42,8 @@ private:
     sf::Texture m_atlas;
     ImTextureID m_atlasUI;
     std::vector<sf::Sprite> m_elementSprites;
-    int m_currentId{};
+    sf::Sprite m_signalSprite;
+    std::atomic_int m_currentId{};
 
     Field m_field;
 };

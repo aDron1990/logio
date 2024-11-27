@@ -181,7 +181,20 @@ void Game::render() noexcept
 {
     m_window.clear();
 
-    m_field.draw(m_window, m_elementSprites);
+    auto width = static_cast<float>(m_field.sizeX() * SPRITE_SIZE);
+    auto height = static_cast<float>(m_field.sizeY() * SPRITE_SIZE);
+    auto fieldBackground = sf::RectangleShape{{width, height}};
+    fieldBackground.setFillColor({150, 150, 150, 255});
+    m_window.draw(fieldBackground);
+
+    for (auto& cell : m_field)
+    {
+        std::shared_lock lock{cell.data.mutex};
+        if (cell.data.data == nullptr) continue;
+        auto sprite = m_elementSprites[*cell.data.data];
+        sprite.setPosition({(float)cell.x * SPRITE_SIZE, (float)cell.y * SPRITE_SIZE});
+        m_window.draw(sprite);
+    }
 
     auto pos = sf::Mouse::getPosition();
     auto worldPos = m_window.mapPixelToCoords(pos);

@@ -5,6 +5,7 @@
 #include <SFML/Graphics.hpp>
 #include <cmrc/cmrc.hpp>
 
+#include <optional>
 #include <shared_mutex>
 #include <memory>
 
@@ -21,16 +22,16 @@ class Field
 public:
     Field();
 
-    void draw(sf::RenderTarget& renderTarget, const std::vector<sf::Sprite>& sprites);
+    size_t sizeX();
+    size_t sizeY();
     void addTo(size_t x, size_t y, int id);
     void removeFrom(size_t x, size_t y);
     std::optional<sf::Vector2i> mapCoordsTpGrid(sf::Vector2f worldPos);
 
-private:
-    void drawGridLines(sf::RenderTarget& renderTarget);
+    Grid<Cell>::Cell* begin();
+    Grid<Cell>::Cell* end();
 
 private:
     Grid<Cell> m_grid;
-    sf::RenderTexture m_gridBakeTexture;
 
 };

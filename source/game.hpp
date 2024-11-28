@@ -46,6 +46,8 @@ private:
     sf::Sprite m_signalSprite;
     std::atomic_int m_currentId{};
     Rotation m_currentRotation{Rotation::Up};
+    const std::vector<int> m_updateTimes = {10, 25, 50, 100, 250, 500, 1000};
+    std::atomic_int m_currentUpdateTimeId{0};
 
     Field m_field;
 };

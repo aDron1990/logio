@@ -29,6 +29,8 @@ add_executable(logio
 	source/elements/jump.hpp
 	source/elements/not.cpp
 	source/elements/not.hpp
+	source/elements/tree.cpp
+	source/elements/tree.hpp
 )
 
 cmrc_add_resource_library(res

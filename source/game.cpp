@@ -35,9 +35,9 @@ Game::Game() :
     m_atlas.loadFromMemory(atlasFile.begin(), atlasFile.size());
     m_signalSprite = sf::Sprite{m_atlas, {0, 0, 16, 16}};
 
-    m_elementTypes.emplace_back(std::make_unique<Wire>(sf::Sprite{m_atlas, {16 * 1 + 1, 0, 16, 16}}));
-    m_elementTypes.emplace_back(std::make_unique<Jump>(sf::Sprite{m_atlas, {16 * 2 + 2, 0, 16, 16}}));
-    m_elementTypes.emplace_back(std::make_unique<Not>(sf::Sprite{m_atlas, {16 * 3 + 3, 0, 16, 16}}));
+    m_elementTypes.emplace_back(std::make_unique<Wire>(sf::Sprite{m_atlas, {16 * 1 + 1, 0, 16, 16}}, sf::Sprite{m_atlas, {16 * 1 + 1, 16 * 1 + 1, 16, 16}}));
+    m_elementTypes.emplace_back(std::make_unique<Jump>(sf::Sprite{m_atlas, {16 * 2 + 2, 0, 16, 16}}, sf::Sprite{m_atlas, {16 * 2 + 2, 16 * 1 + 1, 16, 16}}));
+    m_elementTypes.emplace_back(std::make_unique<Not>(sf::Sprite{m_atlas, {16 * 3 + 3, 0, 16, 16}}, sf::Sprite{m_atlas, {16 * 3 + 3, 16 * 1 + 1, 16, 16}}));
 }
 
 void Game::run() 
@@ -80,6 +80,14 @@ void Game::updateWindow() noexcept
                 if (event.key.scancode == sf::Keyboard::Scancode::Escape) m_running = false;
                 if (event.key.scancode == sf::Keyboard::Scancode::Q) m_currentRotation = rotateCCW(m_currentRotation);
                 if (event.key.scancode == sf::Keyboard::Scancode::E) m_currentRotation = rotateCW(m_currentRotation);
+                if (event.key.scancode == sf::Keyboard::Scancode::Comma) m_currentUpdateTimeId = std::clamp(m_currentUpdateTimeId + 1, 0, (int)m_updateTimes.size() - 1);
+                if (event.key.scancode == sf::Keyboard::Scancode::Period) m_currentUpdateTimeId = std::clamp(m_currentUpdateTimeId - 1, 0, (int)m_updateTimes.size() - 1);
+                if (event.key.scancode >= sf::Keyboard::Scancode::Num1 && event.key.scancode <= sf::Keyboard::Scancode::Num9)
+                {
+                    auto number = event.key.scancode - sf::Keyboard::Scancode::Num1;
+                    if (number >= m_elementTypes.size()) break;
+                    m_currentId = number;
+                }
             }
             break;
             case sf::Event::MouseWheelScrolled:
@@ -171,8 +179,7 @@ void Game::renderUI() noexcept
         ImGui::PopID();
         ImGui::SetCursorPos(cursor);
         if (m_currentId == std::get<0>(element)) ImGui::DrawRectFilled({0, 0, BUTTON_SIZE, BUTTON_SIZE}, ACTIVE_ELEMENT_BG);
-        ImGui::SetCursorPos(cursor);
-        auto sprite = std::get<1>(element)->getSprite();
+        auto sprite = std::get<1>(element)->getDefaultSprite();
         auto scale = sprite.getScale();
         scale = {(float)scale.x / SPRITE_SIZE, (float)scale.y / SPRITE_SIZE};
         sprite.setScale(scale * BUTTON_SIZE);
@@ -207,25 +214,19 @@ void Game::renderUI() noexcept
 
 void Game::render() noexcept
 {
-    m_window.clear();
+    m_window.clear({100, 100, 100, 255});
 
     auto width = static_cast<float>(m_field.sizeX() * SPRITE_SIZE);
     auto height = static_cast<float>(m_field.sizeY() * SPRITE_SIZE);
     auto fieldBackground = sf::RectangleShape{{width, height}};
-    fieldBackground.setFillColor({150, 150, 150, 255});
+    fieldBackground.setFillColor(sf::Color{200, 200, 200, 255});
     m_window.draw(fieldBackground);
 
     for (auto& cell : m_field)
     {
         std::shared_lock lock{cell.data.mutex};
         if (cell.data.data == nullptr) continue;
-        if (cell.data.data->currentSignal > 0)
-        {
-            auto sprite = m_signalSprite;
-            sprite.setPosition({(float)cell.x * SPRITE_SIZE, (float)cell.y * SPRITE_SIZE});
-            m_window.draw(sprite);
-        }
-        auto sprite = m_elementTypes[cell.data.data->typeId]->getSprite();
+        auto sprite = m_elementTypes[cell.data.data->typeId]->getSprite(m_field, cell);
         sprite.setOrigin({SPRITE_SIZE / 2, SPRITE_SIZE / 2});
         sprite.setPosition({(float)cell.x * SPRITE_SIZE + SPRITE_SIZE / 2, (float)cell.y * SPRITE_SIZE + SPRITE_SIZE / 2});
         sprite.setRotation(rotationToAngle(cell.data.data->rotation));
@@ -238,7 +239,7 @@ void Game::render() noexcept
 
     if (!ImGui::GetIO().WantCaptureMouse && gridPos)
     {
-        auto ghost = m_elementTypes[m_currentId]->getSprite();
+        auto ghost = m_elementTypes[m_currentId]->getDefaultSprite();
         ghost.setColor({255, 255, 255, 150});
         ghost.setOrigin({SPRITE_SIZE / 2, SPRITE_SIZE / 2});
         ghost.setPosition({(float)gridPos->x * SPRITE_SIZE + SPRITE_SIZE / 2, (float)gridPos->y * SPRITE_SIZE + SPRITE_SIZE / 2});
@@ -252,15 +253,16 @@ void Game::render() noexcept
 
 void Game::gameProc() noexcept
 {
+    using namespace std::literals;
     while (m_running)
     {
         m_updateDeltaTime = m_updateDeltaClock.restart();
-        //m_updateDelta = ((float)m_updateDeltaTime.asMicroseconds() / 1000.0f);
         sf::Clock clock;
         clock.restart();
         updateField();
         m_updateDelta = ((float)clock.getElapsedTime().asMicroseconds() / 1000.0f);
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        auto sleepTime = std::chrono::milliseconds(m_updateTimes[m_currentUpdateTimeId] - (int)m_updateDelta);
+        std::this_thread::sleep_for(sleepTime);
     }
 }
 
@@ -279,6 +281,12 @@ void Game::updateField() noexcept
         std::shared_lock lock{elementData.data.mutex};
         if (elementData.data.data == nullptr) return;
         elementData.data.data->currentSignal = elementData.data.data->nextSignal.load();
-        elementData.data.data->nextSignal = 0;
+        if (elementData.data.data->nextSignal > 1)
+        {
+            elementData.data.data->nextSignal--;
+            elementData.data.data->currentSignal = 1;
+        }
+        else
+            elementData.data.data->nextSignal = 0;
     });
 }

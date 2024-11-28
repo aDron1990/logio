@@ -3,6 +3,7 @@
 #include "defines.hpp"
 
 #include "elements/wire.hpp"
+#include "elements/jump.hpp"
 #include "elements/not.hpp"
 
 #include <print>
@@ -34,8 +35,9 @@ Game::Game() :
     m_atlas.loadFromMemory(atlasFile.begin(), atlasFile.size());
     m_signalSprite = sf::Sprite{m_atlas, {0, 0, 16, 16}};
 
-    m_elementTypes.emplace_back(std::make_unique<Wire>(sf::Sprite{m_atlas, {17, 0, 16, 16}}));
-    m_elementTypes.emplace_back(std::make_unique<Not>(sf::Sprite{m_atlas, {34, 0, 16, 16}}));
+    m_elementTypes.emplace_back(std::make_unique<Wire>(sf::Sprite{m_atlas, {16 * 1 + 1, 0, 16, 16}}));
+    m_elementTypes.emplace_back(std::make_unique<Jump>(sf::Sprite{m_atlas, {16 * 2 + 2, 0, 16, 16}}));
+    m_elementTypes.emplace_back(std::make_unique<Not>(sf::Sprite{m_atlas, {16 * 3 + 3, 0, 16, 16}}));
 }
 
 void Game::run() 
@@ -145,11 +147,14 @@ void Game::updateCamera() noexcept
 
 void Game::renderUI() noexcept
 {
+    const float BUTTON_SIZE = 75.0f;
+    const sf::Color ACTIVE_ELEMENT_BG{0xA0A0A0FF};
+
     static auto flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar;
 
     auto size = ImVec2{};
     size.y = sf::VideoMode::getDesktopMode().height;
-    size.x = 90 + 16;
+    size.x = BUTTON_SIZE + 16;
     ImGui::SetNextWindowSize(size);
     ImGui::SetNextWindowPos({0, 0});
     ImGui::SetNextWindowBgAlpha(0.8f);
@@ -159,22 +164,45 @@ void Game::renderUI() noexcept
     {
         auto cursor = ImGui::GetCursorPos();
         ImGui::PushID(std::get<0>(element));
-        if (ImGui::InvisibleButton("spriteButton", {90, 90}))
+        if (ImGui::InvisibleButton("spriteButton", {BUTTON_SIZE, BUTTON_SIZE}))
         {
             m_currentId = std::get<0>(element);
         }
         ImGui::PopID();
         ImGui::SetCursorPos(cursor);
-        if (m_currentId == std::get<0>(element))
-            ImGui::DrawRectFilled({0, 0, 90, 90}, sf::Color{0xF0F0F0FF});
-        ImGui::SetCursorPos({cursor.x + 5, cursor.y + 5});
+        if (m_currentId == std::get<0>(element)) ImGui::DrawRectFilled({0, 0, BUTTON_SIZE, BUTTON_SIZE}, ACTIVE_ELEMENT_BG);
+        ImGui::SetCursorPos(cursor);
         auto sprite = std::get<1>(element)->getSprite();
-        sprite.setScale(sprite.getScale() * 5.0f);
+        auto scale = sprite.getScale();
+        scale = {(float)scale.x / SPRITE_SIZE, (float)scale.y / SPRITE_SIZE};
+        sprite.setScale(scale * BUTTON_SIZE);
         ImGui::Image(sprite);
-        ImGui::SetCursorPos({cursor.x, cursor.y * 2 + 90});
+        ImGui::SetCursorPos({cursor.x, cursor.y + BUTTON_SIZE + 8});
     }
 
     ImGui::End();
+
+    #if 0
+    ImGui::Begin("Debug");
+    static float frametimes[1000] = {};
+    for (auto i = 0; i < std::size(frametimes) - 1; i++)
+    {
+        frametimes[i] = frametimes[i + 1];
+    }
+    frametimes[std::size(frametimes) - 1] = m_frameDelta;
+
+    static float updatetimes[1000] = {};
+    for (auto i = 0; i < std::size(updatetimes) - 1; i++)
+    {
+        updatetimes[i] = updatetimes[i + 1];
+    }
+    updatetimes[std::size(updatetimes) - 1] = m_updateDelta;
+    ImGui::PlotLines("frametime", frametimes, std::size(frametimes));
+    ImGui::PlotLines("updatetime", updatetimes, std::size(updatetimes));
+    ImGui::End();
+
+    ImGui::ShowDemoWindow();
+    #endif
 }
 
 void Game::render() noexcept
@@ -227,27 +255,30 @@ void Game::gameProc() noexcept
     while (m_running)
     {
         m_updateDeltaTime = m_updateDeltaClock.restart();
-        m_updateDelta = ((float)m_updateDeltaTime.asMicroseconds() / 1000.0f);
+        //m_updateDelta = ((float)m_updateDeltaTime.asMicroseconds() / 1000.0f);
+        sf::Clock clock;
+        clock.restart();
         updateField();
+        m_updateDelta = ((float)clock.getElapsedTime().asMicroseconds() / 1000.0f);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 }
 
 void Game::updateField() noexcept
 {
-    std::for_each(m_field.begin(), m_field.end(), [this](auto& elementData)
+    std::for_each(std::execution::par, m_field.begin(), m_field.end(), [this](auto& elementData)
     {
         std::shared_lock lock{elementData.data.mutex};
         if (elementData.data.data == nullptr) return;
         auto& element = m_elementTypes[elementData.data.data->typeId];
         element->onUpdate(m_field, elementData);
     });
-    std::for_each(m_field.begin(), m_field.end(),
+    std::for_each(std::execution::par, m_field.begin(), m_field.end(),
     [this](auto& elementData)
     {
-        std::unique_lock lock{elementData.data.mutex};
+        std::shared_lock lock{elementData.data.mutex};
         if (elementData.data.data == nullptr) return;
-        elementData.data.data->currentSignal = elementData.data.data->nextSignal;
+        elementData.data.data->currentSignal = elementData.data.data->nextSignal.load();
         elementData.data.data->nextSignal = 0;
     });
 }

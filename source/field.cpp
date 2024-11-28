@@ -23,7 +23,7 @@ void Field::removeFrom(size_t x, size_t y)
 void Field::sendSignal(size_t x, size_t y) 
 {
     auto& cell = m_grid.get(x, y);
-    std::unique_lock lock{cell.data.mutex};
+    std::shared_lock lock{cell.data.mutex};
     if (m_grid.get(x, y).data.data == nullptr) return;
     m_grid.get(x, y).data.data->nextSignal++;
 }

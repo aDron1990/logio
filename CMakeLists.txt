@@ -25,6 +25,8 @@ add_executable(logio
 
 	source/elements/wire.cpp
 	source/elements/wire.hpp
+	source/elements/jump.cpp
+	source/elements/jump.hpp
 	source/elements/not.cpp
 	source/elements/not.hpp
 )

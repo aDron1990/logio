@@ -53,7 +53,6 @@ public:
 
     Grid& operator=(Grid&& rhs) noexcept
     {
-        if (m_data != nullptr) delete[] m_data;
         std::swap(m_data, rhs.m_data);
         m_sizeX = rhs.m_sizeX;
         m_sizeY = rhs.m_sizeY;

@@ -78,7 +78,7 @@ void UI::drawSidebar(std::vector<std::unique_ptr<Element>>& elementTypes, std::a
     ImGui::End();
 }
 
-void UI::drawMenu(std::atomic_bool& running)
+void UI::drawMenu(std::atomic_bool& running, std::function<void(const std::filesystem::path& path)> onSave, std::function<void(const std::filesystem::path& path)> onLoad)
 {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Escape)) ImGui::OpenPopup("menu");
 
@@ -92,6 +92,9 @@ void UI::drawMenu(std::atomic_bool& running)
     {
         ImGui::SetWindowSize(windowSize);
         if (ImGui::Button("Continue", buttonSize)) ImGui::CloseCurrentPopup();
+        if (ImGui::Button("Save", buttonSize)) onSave("test.json");
+        if (ImGui::Button("Load", buttonSize)) 
+            onLoad("test.json");
         if (ImGui::Button("Exit", buttonSize)) running = false;
         ImGui::EndPopup();
     }

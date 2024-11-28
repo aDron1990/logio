@@ -1,6 +1,5 @@
 {
   "dependencies": [
-    "boost",
     "cmakerc",
     {
       "name": "imgui",
@@ -9,7 +8,8 @@
       ]
     },
     "imgui-sfml",
+    "nlohmann-json",
     "sfml",
-    "libcds"
+    "zlib"
   ]
 }

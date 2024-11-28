@@ -3,6 +3,9 @@
 
 #include <ranges>
 #include <print>
+#include <fstream>
+#include <nlohmann/json.hpp>
+#include <iostream>
 
 Field::Field() : m_grid{100, 100} {}
 
@@ -37,6 +40,59 @@ std::optional<sf::Vector2i> Field::mapCoordsTpGrid(sf::Vector2f worldPos)
         static_cast<int>(worldPos.x / SPRITE_SIZE), 
         static_cast<int>(worldPos.y / SPRITE_SIZE)
     };
+}
+
+void Field::clear()
+{
+    m_grid = Grid<Cell>{0, 0};
+}
+
+void Field::save(std::filesystem::path path)
+{
+    using namespace std::literals;
+    auto json = nlohmann::json{};
+    for (auto& cell : m_grid)
+    {
+        std::shared_lock lock{cell.data.mutex};
+        if (cell.data.data == nullptr) continue;
+        auto cellJson = nlohmann::json{};
+        cellJson["type_id"] = cell.data.data->typeId.load();
+        cellJson["current_signal"] = cell.data.data->currentSignal.load();
+        cellJson["next_signal"] = cell.data.data->nextSignal.load();
+        cellJson["rotation"] = rotationToAngle(cell.data.data->rotation);
+        cellJson["coords"] = nlohmann::json::array({cell.x, cell.y});
+        json.push_back(cellJson);
+    }
+    auto file = std::ofstream{path};
+    file << nlohmann::to_string(json);
+}
+
+bool Field::load(std::filesystem::path path)
+{
+    if (!std::filesystem::exists(path)) return false;
+    auto file = std::ifstream{path};
+    auto json = nlohmann::json::parse(file);
+    if (json.empty()) return false;
+    m_grid = Grid<Cell>{m_grid.sizeX(), m_grid.sizeY()};
+    for (auto& cellJson : json)
+    {
+        auto x = cellJson["coords"][0].get<size_t>();
+        auto y = cellJson["coords"][1].get<size_t>();
+        auto typeId = cellJson["type_id"].get<uint8_t>();
+        auto currentSignal = cellJson["current_signal"].get<uint8_t>();
+        auto nextSignal = cellJson["next_signal"].get<uint8_t>();
+        auto rotation = static_cast<Rotation>(cellJson["rotation"].get<float>());
+        auto& cell = m_grid.get(x, y);
+        std::unique_lock lock{cell.data.mutex};
+        cell.data.data.reset(new ElementData
+        {
+            .rotation = rotation, 
+            .typeId = typeId,
+            .currentSignal = currentSignal,
+            .nextSignal = nextSignal
+        });
+    }
+    return true;
 }
 
 Grid<Cell>::Cell* Field::begin()

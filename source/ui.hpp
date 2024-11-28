@@ -8,6 +8,8 @@
 #include <vector>
 #include <memory>
 #include <atomic>
+#include <functional>
+#include <filesystem>
 
 class UI
 {
@@ -21,7 +23,7 @@ public:
 
     void drawSidebar(std::vector<std::unique_ptr<Element>>& elementTypes, std::atomic_int& currentId);
 
-    void drawMenu(std::atomic_bool& running);
+    void drawMenu(std::atomic_bool& running, std::function<void(const std::filesystem::path& path)> onSave, std::function<void(const std::filesystem::path& path)> onLoad);
     void commandMenu();
     bool isInMenu();
 

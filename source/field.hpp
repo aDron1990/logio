@@ -9,6 +9,7 @@
 #include <optional>
 #include <shared_mutex>
 #include <memory>
+#include <filesystem>
 
 CMRC_DECLARE(res);
 
@@ -29,6 +30,10 @@ public:
     void removeFrom(size_t x, size_t y);
     void sendSignal(size_t x, size_t y);
     std::optional<sf::Vector2i> mapCoordsTpGrid(sf::Vector2f worldPos);
+
+    void clear();
+    void save(std::filesystem::path path);
+    bool load(std::filesystem::path path);
 
     Grid<Cell>::Cell* begin();
     Grid<Cell>::Cell* end();

@@ -55,7 +55,10 @@ void Game::windowProc() noexcept
         updateCamera();
         m_ui.beginDraw(m_window, m_frameDeltaTime);
         m_window.clear({100, 100, 100, 255});
-        m_ui.drawMenu(m_running);
+        m_ui.drawMenu(m_running, 
+            [this](const std::filesystem::path& path) { m_field.save(path); }, 
+            [this](const std::filesystem::path& path) { m_field.load(path); }
+        );
         if (!m_ui.isInMenu()) m_ui.drawSidebar(m_elementTypes, m_currentId);
         ImGui::ShowDemoWindow();
         render();
@@ -120,8 +123,6 @@ void Game::updateWindow() noexcept
     {
         m_field.removeFrom(gridPos->x, gridPos->y);
     }
-
-    
 }
 
 void Game::updateCamera() noexcept
@@ -161,8 +162,6 @@ void Game::updateCamera() noexcept
 
 void Game::render() noexcept
 {
-    
-
     auto width = static_cast<float>(m_field.sizeX() * SPRITE_SIZE);
     auto height = static_cast<float>(m_field.sizeY() * SPRITE_SIZE);
     auto fieldBackground = sf::RectangleShape{{width, height}};
@@ -193,9 +192,6 @@ void Game::render() noexcept
         ghost.setRotation(rotationToAngle(m_currentRotation));
         m_window.draw(ghost);
     }
-
-    
-    
 }
 
 void Game::gameProc() noexcept

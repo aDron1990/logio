@@ -10,7 +10,6 @@ find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(ImGui-SFML CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
-find_package(ZLIB REQUIRED)
 
 add_executable(logio 
 	source/main.cpp
@@ -54,7 +53,6 @@ target_link_libraries(logio PRIVATE
 	imgui::imgui
 	ImGui-SFML::ImGui-SFML
 	nlohmann_json::nlohmann_json
-	ZLIB::ZLIB
 )
 
 target_include_directories(logio PRIVATE source/)

@@ -9,7 +9,6 @@
     },
     "imgui-sfml",
     "nlohmann-json",
-    "sfml",
-    "zlib"
+    "sfml"
   ]
 }

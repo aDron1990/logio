@@ -3,6 +3,7 @@
 #include "defines.hpp"
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 #include <imgui-SFML.h>
 
 #include <ranges>
@@ -78,24 +79,83 @@ void UI::drawSidebar(std::vector<std::unique_ptr<Element>>& elementTypes, std::a
     ImGui::End();
 }
 
-void UI::drawMenu(std::atomic_bool& running, std::function<void(const std::filesystem::path& path)> onSave, std::function<void(const std::filesystem::path& path)> onLoad)
+void UI::drawMenu(std::atomic_bool& running, 
+    std::function<void(const std::filesystem::path& path)> onSave, 
+    std::function<bool(const std::filesystem::path& path)> onLoad,
+    std::function<void()> onNew)
 {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Escape)) ImGui::OpenPopup("menu");
 
     const auto flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar;
     const auto padding = ImGui::GetStyle().WindowPadding;
     const auto windowSize = ImVec2{300, 500};
-    const auto buttonSize = ImVec2{windowSize.x - padding.x * 2, 30};
+    const auto buttonSize = ImVec2{-FLT_MIN, 0.0f};
 
     bool open = m_inMenu;
     if (ImGui::BeginPopupModal("menu", &open, flags))
     {
         ImGui::SetWindowSize(windowSize);
         if (ImGui::Button("Continue", buttonSize)) ImGui::CloseCurrentPopup();
-        if (ImGui::Button("Save", buttonSize)) onSave("test.json");
-        if (ImGui::Button("Load", buttonSize)) 
-            onLoad("test.json");
-        if (ImGui::Button("Exit", buttonSize)) running = false;
+        if (ImGui::Button("New", buttonSize))
+        {
+            onNew();
+            ImGui::CloseCurrentPopup();
+        }
+        if (ImGui::Button("Save", buttonSize)) ImGui::OpenPopup("save");
+        if (ImGui::Button("Load", buttonSize)) ImGui::OpenPopup("load");
+        if (ImGui::Button("Exit", buttonSize)) running = false;    
+        if (ImGui::BeginPopupModal("load", nullptr, flags))
+        {
+            ImGui::SetWindowSize(windowSize);
+            auto currentItem = std::filesystem::path{};
+            ImGui::BeginChild("Saves", {0.0f, -ImGui::GetFrameHeightWithSpacing()});
+            if (!std::filesystem::exists("saves/")) std::filesystem::create_directory("saves/");
+            for (auto pathAndId : std::filesystem::directory_iterator("saves/") | std::views::enumerate)
+            {
+                if (!std::get<1>(pathAndId).is_regular_file()) continue;
+                auto path = std::get<1>(pathAndId).path();
+                auto filename = path.filename().string();
+                auto select = false;
+                if (ImGui::Selectable(filename.c_str(), &select))
+                {
+                    if (onLoad(path))
+                    {
+                        ImGui::CloseCurrentPopup();
+                        open = false;
+                    }
+                }
+            }
+            ImGui::EndChild();
+            if (ImGui::Button("Back", {-FLT_MIN, 0.0f})) ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+        }
+        if (ImGui::BeginPopupModal("save", nullptr, flags))
+        {
+            ImGui::SetWindowSize(windowSize);
+            using namespace std::literals;
+            auto currentItem = std::filesystem::path{};
+            ImGui::BeginChild("Saves", {0.0f, -(ImGui::GetFrameHeightWithSpacing() * 3)});
+            if (!std::filesystem::exists("saves/")) std::filesystem::create_directory("saves/");
+            for (auto pathAndId : std::filesystem::directory_iterator("saves/") | std::views::enumerate)
+            {
+                if (!std::get<1>(pathAndId).is_regular_file()) continue;
+                auto path = std::get<1>(pathAndId).path();
+                auto filename = path.filename().string();
+                auto select = false;
+                if (ImGui::Selectable(filename.c_str(), &select))
+                {
+                    m_saveName = filename;
+                }
+            }
+            ImGui::EndChild();
+            ImGui::PushItemWidth(-FLT_MIN);
+            ImGui::InputText("##", &m_saveName);
+            ImGui::PopItemWidth();
+            m_savePath = "saves/"s + m_saveName;
+            if (ImGui::Button("Save", {-FLT_MIN, 0.0f})) onSave(m_savePath);
+            if (ImGui::Button("Back", {-FLT_MIN, 0.0f})) ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+        }
         ImGui::EndPopup();
     }
     m_inMenu = open;

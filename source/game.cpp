@@ -57,7 +57,8 @@ void Game::windowProc() noexcept
         m_window.clear({100, 100, 100, 255});
         m_ui.drawMenu(m_running, 
             [this](const std::filesystem::path& path) { m_field.save(path); }, 
-            [this](const std::filesystem::path& path) { m_field.load(path); }
+            [this](const std::filesystem::path& path) { return m_field.load(path); },
+            [this]() { m_field.clear(); }
         );
         if (!m_ui.isInMenu()) m_ui.drawSidebar(m_elementTypes, m_currentId);
         ImGui::ShowDemoWindow();

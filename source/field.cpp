@@ -6,6 +6,7 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <iostream>
+#include <zlib.h>
 
 Field::Field() : m_grid{100, 100} {}
 
@@ -44,7 +45,7 @@ std::optional<sf::Vector2i> Field::mapCoordsTpGrid(sf::Vector2f worldPos)
 
 void Field::clear()
 {
-    m_grid = Grid<Cell>{0, 0};
+    m_grid = Grid<Cell>{m_grid.sizeX(), m_grid.sizeY()};
 }
 
 void Field::save(std::filesystem::path path)

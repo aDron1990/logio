@@ -5,6 +5,8 @@
 #include "elements/wire.hpp"
 #include "elements/jump.hpp"
 #include "elements/not.hpp"
+#include "elements/and.hpp"
+#include "elements/tree.hpp"
 
 #include <print>
 #include <ranges>
@@ -12,24 +14,14 @@
 
 Game::Game() : 
     m_window{sf::VideoMode::getDesktopMode(), "logio", 0}, 
-    m_resources{cmrc::res::get_filesystem()}
+    m_resources{cmrc::res::get_filesystem()}, 
+    m_ui{m_window, m_resources.open("resources/fonts/ubuntu.ttf")}
 {
     m_window.setVerticalSyncEnabled(true);
     auto view = m_window.getView();
     view.setCenter({0, 0});
     view.zoom(0.1);
     m_window.setView(view);
-    IMGUI_CHECKVERSION();
-    ImGui::SFML::Init(m_window);
-
-    auto& io = ImGui::GetIO();
-    auto fontFile = m_resources.open("resources/fonts/ubuntu.ttf");
-    auto fontCfg = ImFontConfig{};
-    fontCfg.FontDataOwnedByAtlas = false;
-    io.Fonts->Clear();
-    io.Fonts->AddFontFromMemoryTTF((void*)fontFile.begin(), fontFile.size(), 16, &fontCfg);
-    ImGui::SFML::UpdateFontTexture();
-    setImguiTheme();
 
     auto atlasFile = m_resources.open("resources/images/atlas.png");
     m_atlas.loadFromMemory(atlasFile.begin(), atlasFile.size());
@@ -38,6 +30,13 @@ Game::Game() :
     m_elementTypes.emplace_back(std::make_unique<Wire>(sf::Sprite{m_atlas, {16 * 1 + 1, 0, 16, 16}}, sf::Sprite{m_atlas, {16 * 1 + 1, 16 * 1 + 1, 16, 16}}));
     m_elementTypes.emplace_back(std::make_unique<Jump>(sf::Sprite{m_atlas, {16 * 2 + 2, 0, 16, 16}}, sf::Sprite{m_atlas, {16 * 2 + 2, 16 * 1 + 1, 16, 16}}));
     m_elementTypes.emplace_back(std::make_unique<Not>(sf::Sprite{m_atlas, {16 * 3 + 3, 0, 16, 16}}, sf::Sprite{m_atlas, {16 * 3 + 3, 16 * 1 + 1, 16, 16}}));
+    m_elementTypes.emplace_back(std::make_unique<And>
+    (
+        sf::Sprite{m_atlas, {16 * 4 + 4, 0, 16, 16}}, 
+        sf::Sprite{m_atlas, {16 * 4 + 4, 16 * 2 + 2, 16, 16}}, 
+        sf::Sprite{m_atlas, {16 * 4 + 4, 16 * 1 + 1, 16, 16}}
+    ));
+    m_elementTypes.emplace_back(std::make_unique<Tree>(sf::Sprite{m_atlas, {16 * 5 + 5, 0, 16, 16}}, sf::Sprite{m_atlas, {16 * 5 + 5, 16 * 1 + 1, 16, 16}}));
 }
 
 void Game::run() 
@@ -54,10 +53,15 @@ void Game::windowProc() noexcept
         m_frameDelta = ((float)m_frameDeltaTime.asMicroseconds() / 1000.0f);
         updateWindow();
         updateCamera();
-        renderUI();
+        m_ui.beginDraw(m_window, m_frameDeltaTime);
+        m_window.clear({100, 100, 100, 255});
+        m_ui.drawMenu(m_running);
+        if (!m_ui.isInMenu()) m_ui.drawSidebar(m_elementTypes, m_currentId);
+        ImGui::ShowDemoWindow();
         render();
+        m_ui.endDraw(m_window);
+        m_window.display();
     }
-    ImGui::SFML::Shutdown();
 }
 
 void Game::updateWindow() noexcept
@@ -71,13 +75,14 @@ void Game::updateWindow() noexcept
 
     while (m_window.pollEvent(event))
     {
-        ImGui::SFML::ProcessEvent(m_window, event);
+        m_ui.processEvent(m_window, event);
         switch (event.type)
         {
             case sf::Event::Closed: m_running = false; break;
             case sf::Event::KeyPressed: 
             {
-                if (event.key.scancode == sf::Keyboard::Scancode::Escape) m_running = false;
+                //if (event.key.scancode == sf::Keyboard::Scancode::Escape) m_running = false;
+                if (event.key.scancode == sf::Keyboard::Scancode::Escape) m_ui.commandMenu();
                 if (event.key.scancode == sf::Keyboard::Scancode::Q) m_currentRotation = rotateCCW(m_currentRotation);
                 if (event.key.scancode == sf::Keyboard::Scancode::E) m_currentRotation = rotateCW(m_currentRotation);
                 if (event.key.scancode == sf::Keyboard::Scancode::Comma) m_currentUpdateTimeId = std::clamp(m_currentUpdateTimeId + 1, 0, (int)m_updateTimes.size() - 1);
@@ -116,11 +121,12 @@ void Game::updateWindow() noexcept
         m_field.removeFrom(gridPos->x, gridPos->y);
     }
 
-    ImGui::SFML::Update(m_window, m_frameDeltaTime);
+    
 }
 
 void Game::updateCamera() noexcept
 {
+    if (m_ui.isInMenu()) return;
     auto resolution = sf::VideoMode::getDesktopMode();
     auto viewSize = m_window.getView().getSize();
 
@@ -153,68 +159,9 @@ void Game::updateCamera() noexcept
     }
 }
 
-void Game::renderUI() noexcept
-{
-    const float BUTTON_SIZE = 75.0f;
-    const sf::Color ACTIVE_ELEMENT_BG{0xA0A0A0FF};
-
-    static auto flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar;
-
-    auto size = ImVec2{};
-    size.y = sf::VideoMode::getDesktopMode().height;
-    size.x = BUTTON_SIZE + 16;
-    ImGui::SetNextWindowSize(size);
-    ImGui::SetNextWindowPos({0, 0});
-    ImGui::SetNextWindowBgAlpha(0.8f);
-    ImGui::Begin("sprites", nullptr, flags);
-
-    for (auto element : m_elementTypes | std::views::enumerate)
-    {
-        auto cursor = ImGui::GetCursorPos();
-        ImGui::PushID(std::get<0>(element));
-        if (ImGui::InvisibleButton("spriteButton", {BUTTON_SIZE, BUTTON_SIZE}))
-        {
-            m_currentId = std::get<0>(element);
-        }
-        ImGui::PopID();
-        ImGui::SetCursorPos(cursor);
-        if (m_currentId == std::get<0>(element)) ImGui::DrawRectFilled({0, 0, BUTTON_SIZE, BUTTON_SIZE}, ACTIVE_ELEMENT_BG);
-        auto sprite = std::get<1>(element)->getDefaultSprite();
-        auto scale = sprite.getScale();
-        scale = {(float)scale.x / SPRITE_SIZE, (float)scale.y / SPRITE_SIZE};
-        sprite.setScale(scale * BUTTON_SIZE);
-        ImGui::Image(sprite);
-        ImGui::SetCursorPos({cursor.x, cursor.y + BUTTON_SIZE + 8});
-    }
-
-    ImGui::End();
-
-    #if 0
-    ImGui::Begin("Debug");
-    static float frametimes[1000] = {};
-    for (auto i = 0; i < std::size(frametimes) - 1; i++)
-    {
-        frametimes[i] = frametimes[i + 1];
-    }
-    frametimes[std::size(frametimes) - 1] = m_frameDelta;
-
-    static float updatetimes[1000] = {};
-    for (auto i = 0; i < std::size(updatetimes) - 1; i++)
-    {
-        updatetimes[i] = updatetimes[i + 1];
-    }
-    updatetimes[std::size(updatetimes) - 1] = m_updateDelta;
-    ImGui::PlotLines("frametime", frametimes, std::size(frametimes));
-    ImGui::PlotLines("updatetime", updatetimes, std::size(updatetimes));
-    ImGui::End();
-
-    ImGui::ShowDemoWindow();
-    #endif
-}
-
 void Game::render() noexcept
 {
-    m_window.clear({100, 100, 100, 255});
+    
 
     auto width = static_cast<float>(m_field.sizeX() * SPRITE_SIZE);
     auto height = static_cast<float>(m_field.sizeY() * SPRITE_SIZE);
@@ -247,8 +194,8 @@ void Game::render() noexcept
         m_window.draw(ghost);
     }
 
-    ImGui::SFML::Render(m_window);
-    m_window.display();
+    
+    
 }
 
 void Game::gameProc() noexcept
@@ -259,7 +206,8 @@ void Game::gameProc() noexcept
         m_updateDeltaTime = m_updateDeltaClock.restart();
         sf::Clock clock;
         clock.restart();
-        updateField();
+        if (!m_ui.isInMenu())
+            updateField();
         m_updateDelta = ((float)clock.getElapsedTime().asMicroseconds() / 1000.0f);
         auto sleepTime = std::chrono::milliseconds(m_updateTimes[m_currentUpdateTimeId] - (int)m_updateDelta);
         std::this_thread::sleep_for(sleepTime);
@@ -281,12 +229,6 @@ void Game::updateField() noexcept
         std::shared_lock lock{elementData.data.mutex};
         if (elementData.data.data == nullptr) return;
         elementData.data.data->currentSignal = elementData.data.data->nextSignal.load();
-        if (elementData.data.data->nextSignal > 1)
-        {
-            elementData.data.data->nextSignal--;
-            elementData.data.data->currentSignal = 1;
-        }
-        else
-            elementData.data.data->nextSignal = 0;
+        elementData.data.data->nextSignal = 0;
     });
 }

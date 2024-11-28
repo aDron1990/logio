@@ -14,6 +14,8 @@ add_executable(logio
 	source/main.cpp
 	source/defines.hpp
 	source/imgui_theme.hpp
+	source/ui.cpp
+	source/ui.hpp
 	source/game.cpp
 	source/game.hpp
 	source/grid.hpp
@@ -29,6 +31,8 @@ add_executable(logio
 	source/elements/jump.hpp
 	source/elements/not.cpp
 	source/elements/not.hpp
+	source/elements/and.cpp
+	source/elements/and.hpp
 	source/elements/tree.cpp
 	source/elements/tree.hpp
 )

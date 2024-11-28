@@ -2,6 +2,7 @@
 
 #include "field.hpp"
 #include "element.hpp"
+#include "ui.hpp"
 
 #include <SFML/Graphics.hpp>
 #include <SFML/OpenGL.hpp>
@@ -27,7 +28,6 @@ private:
     void updateField() noexcept;
     void updateWindow() noexcept;
     void updateCamera() noexcept;
-    void renderUI() noexcept;
     void render() noexcept;
 
 private:
@@ -50,4 +50,5 @@ private:
     std::atomic_int m_currentUpdateTimeId{0};
 
     Field m_field;
+    UI m_ui;
 };

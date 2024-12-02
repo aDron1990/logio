@@ -8,7 +8,7 @@
 #include <iostream>
 #include <zlib.h>
 
-Field::Field() : m_grid{100, 100} {}
+Field::Field() : m_grid{250, 250} {}
 
 void Field::addTo(size_t x, size_t y, uint8_t id, Rotation rotation)
 {

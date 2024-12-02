@@ -61,7 +61,7 @@ void Game::windowProc() noexcept
             [this]() { m_field.clear(); }
         );
         if (!m_ui.isInMenu()) m_ui.drawSidebar(m_elementTypes, m_currentId);
-        ImGui::ShowDemoWindow();
+        //ImGui::ShowDemoWindow();
         render();
         m_ui.endDraw(m_window);
         m_window.display();

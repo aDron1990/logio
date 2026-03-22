@@ -112,6 +112,9 @@ void Game::updateWindow() noexcept
         }
     }
 
+    if (!m_window.hasFocus())
+        return;
+
     if (!io.WantCaptureMouse && sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && gridPos)
     {
         m_field.sendSignal(gridPos->x, gridPos->y);
@@ -183,7 +186,7 @@ void Game::render() noexcept
     auto worldPos = m_window.mapPixelToCoords(pos);
     auto gridPos = m_field.mapCoordsTpGrid(worldPos);
 
-    if (!ImGui::GetIO().WantCaptureMouse && gridPos)
+    if (!ImGui::GetIO().WantCaptureMouse && gridPos && m_window.hasFocus())
     {
         auto ghost = m_elementTypes[m_currentId]->getDefaultSprite();
         ghost.setColor({255, 255, 255, 150});

@@ -7,8 +7,8 @@
 
 struct ElementData
 {
-    std::atomic<Rotation> rotation;
-    std::atomic<uint8_t> typeId;
-    std::atomic<uint8_t> currentSignal{};
-    std::atomic<uint8_t> nextSignal{};
+    Rotation rotation;
+    uint8_t typeId;
+    uint8_t currentSignal{};
+    uint8_t nextSignal{};
 };

@@ -16,7 +16,6 @@ void Field::addTo(ptrdiff_t x, ptrdiff_t y, uint8_t id, Rotation rotation)
         return;
 
     auto& cell = m_grid.get(x, y);
-    std::unique_lock lock{cell.data.mutex};
     m_grid.get(x, y).data.data.reset(new ElementData{.rotation = rotation, .typeId = id});
 }
 
@@ -26,7 +25,6 @@ void Field::removeFrom(ptrdiff_t x, ptrdiff_t y)
         return;
 
     auto& cell = m_grid.get(x, y);
-    std::unique_lock lock{cell.data.mutex};
     m_grid.get(x, y).data.data.reset();
 }
 
@@ -36,7 +34,6 @@ void Field::sendSignal(ptrdiff_t x, ptrdiff_t y)
         return;
 
     auto& cell = m_grid.get(x, y);
-    std::shared_lock lock{cell.data.mutex};
     if (m_grid.get(x, y).data.data == nullptr) return;
     m_grid.get(x, y).data.data->nextSignal++;
 }
@@ -63,7 +60,6 @@ void Field::save(std::filesystem::path path)
     auto json = nlohmann::json{};
     for (auto& cell : m_grid)
     {
-        std::shared_lock lock{cell.data.mutex};
         if (cell.data.data == nullptr) continue;
         auto cellJson = nlohmann::json{};
         cellJson["type_id"] = cell.data.data->typeId.load();
@@ -93,7 +89,6 @@ bool Field::load(std::filesystem::path path)
         auto nextSignal = cellJson["next_signal"].get<uint8_t>();
         auto rotation = static_cast<Rotation>(cellJson["rotation"].get<float>());
         auto& cell = m_grid.get(x, y);
-        std::unique_lock lock{cell.data.mutex};
         cell.data.data.reset(new ElementData
         {
             .rotation = rotation, 

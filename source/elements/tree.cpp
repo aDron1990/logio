@@ -4,7 +4,6 @@ Tree::Tree(sf::Sprite disableSprite, sf::Sprite activeSprite) : m_disableSprite{
 
 void Tree::onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept
 {
-    std::shared_lock lock{elementCell.data.mutex};
     assert(elementCell.data.data != nullptr);
     if (elementCell.data.data->currentSignal == 0) return;
     {
@@ -23,7 +22,6 @@ void Tree::onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept
 
 sf::Sprite Tree::getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noexcept
 {
-    std::shared_lock lock{elementCell.data.mutex};
     assert(elementCell.data.data != nullptr);
     if (elementCell.data.data->currentSignal == 0) return m_disableSprite;
     return m_activeSprite;

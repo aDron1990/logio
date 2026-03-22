@@ -171,7 +171,6 @@ void Game::render() noexcept
 
     for (auto& cell : m_field)
     {
-        std::shared_lock lock{cell.data.mutex};
         if (cell.data.data == nullptr) continue;
         auto sprite = m_elementTypes[cell.data.data->typeId]->getSprite(m_field, cell);
         sprite.setOrigin({SPRITE_SIZE / 2, SPRITE_SIZE / 2});
@@ -213,17 +212,15 @@ void Game::gameProc() noexcept
 
 void Game::updateField() noexcept
 {
-    std::for_each(std::execution::par, m_field.begin(), m_field.end(), [this](auto& elementData)
+    std::for_each(m_field.begin(), m_field.end(), [this](auto& elementData)
     {
-        std::shared_lock lock{elementData.data.mutex};
         if (elementData.data.data == nullptr) return;
         auto& element = m_elementTypes[elementData.data.data->typeId];
         element->onUpdate(m_field, elementData);
     });
-    std::for_each(std::execution::par, m_field.begin(), m_field.end(),
+    std::for_each(m_field.begin(), m_field.end(),
     [this](auto& elementData)
     {
-        std::shared_lock lock{elementData.data.mutex};
         if (elementData.data.data == nullptr) return;
         elementData.data.data->currentSignal = elementData.data.data->nextSignal.load();
         elementData.data.data->nextSignal = 0;

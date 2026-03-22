@@ -7,7 +7,6 @@
 #include <cmrc/cmrc.hpp>
 
 #include <optional>
-#include <shared_mutex>
 #include <memory>
 #include <filesystem>
 
@@ -15,7 +14,6 @@ CMRC_DECLARE(res);
 
 struct Cell
 {
-    std::shared_mutex mutex;
     std::unique_ptr<ElementData> data;
 };
 

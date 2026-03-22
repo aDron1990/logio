@@ -4,7 +4,6 @@ Wire::Wire(sf::Sprite disableSprite, sf::Sprite activeSprite) : m_disableSprite{
 
 void Wire::onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept
 {
-    std::shared_lock lock{elementCell.data.mutex};
     assert(elementCell.data.data != nullptr);
     if (elementCell.data.data->currentSignal == 0) return;
     auto [x, y] = rotationToVector(elementCell.data.data->rotation);
@@ -13,7 +12,6 @@ void Wire::onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept
 
 sf::Sprite Wire::getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noexcept 
 {
-    std::shared_lock lock{elementCell.data.mutex};
     assert(elementCell.data.data != nullptr);
     if (elementCell.data.data->currentSignal == 0) return m_disableSprite;
     return m_activeSprite;

@@ -63,14 +63,14 @@ public:
     Grid(const Grid&) = delete;
     Grid& operator=(const Grid&) = delete;
 
-    const Cell& get(size_t x, size_t y) const
+    const Cell& get(ptrdiff_t x, ptrdiff_t y) const
     {
         assert(x < m_sizeX && y < m_sizeY);
         auto index = coordsToIndex(x, y);
         return m_data[index];
     }
 
-    Cell& get(size_t x, size_t y)
+    Cell& get(ptrdiff_t x, ptrdiff_t y)
     {
         assert(x < m_sizeX && y < m_sizeY);
         auto index = coordsToIndex(x, y);

@@ -26,9 +26,9 @@ public:
 
     size_t sizeX();
     size_t sizeY();
-    void addTo(size_t x, size_t y, uint8_t id, Rotation rotation);
-    void removeFrom(size_t x, size_t y);
-    void sendSignal(size_t x, size_t y);
+    void addTo(ptrdiff_t x, ptrdiff_t y, uint8_t id, Rotation rotation);
+    void removeFrom(ptrdiff_t x, ptrdiff_t y);
+    void sendSignal(ptrdiff_t x, ptrdiff_t y);
     std::optional<sf::Vector2i> mapCoordsTpGrid(sf::Vector2f worldPos);
 
     void clear();

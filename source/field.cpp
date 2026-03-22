@@ -10,22 +10,31 @@
 
 Field::Field() : m_grid{250, 250} {}
 
-void Field::addTo(size_t x, size_t y, uint8_t id, Rotation rotation)
+void Field::addTo(ptrdiff_t x, ptrdiff_t y, uint8_t id, Rotation rotation)
 {
+    if (!(x >= 0 && x < m_grid.sizeX() && y >= 0 && y < m_grid.sizeY()))
+        return;
+
     auto& cell = m_grid.get(x, y);
     std::unique_lock lock{cell.data.mutex};
     m_grid.get(x, y).data.data.reset(new ElementData{.rotation = rotation, .typeId = id});
 }
 
-void Field::removeFrom(size_t x, size_t y)
+void Field::removeFrom(ptrdiff_t x, ptrdiff_t y)
 {
+    if (!(x >= 0 && x < m_grid.sizeX() && y >= 0 && y < m_grid.sizeY()))
+        return;
+
     auto& cell = m_grid.get(x, y);
     std::unique_lock lock{cell.data.mutex};
     m_grid.get(x, y).data.data.reset();
 }
 
-void Field::sendSignal(size_t x, size_t y) 
+void Field::sendSignal(ptrdiff_t x, ptrdiff_t y) 
 {
+    if (!(x >= 0 && x < m_grid.sizeX() && y >= 0 && y < m_grid.sizeY()))
+        return;
+
     auto& cell = m_grid.get(x, y);
     std::shared_lock lock{cell.data.mutex};
     if (m_grid.get(x, y).data.data == nullptr) return;

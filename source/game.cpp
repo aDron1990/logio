@@ -222,7 +222,7 @@ void Game::updateField() noexcept
     [this](auto& elementData)
     {
         if (elementData.data.data == nullptr) return;
-        elementData.data.data->currentSignal = elementData.data.data->nextSignal.load();
+        elementData.data.data->currentSignal = elementData.data.data->nextSignal;
         elementData.data.data->nextSignal = 0;
     });
 }

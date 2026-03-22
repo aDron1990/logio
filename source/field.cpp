@@ -62,9 +62,9 @@ void Field::save(std::filesystem::path path)
     {
         if (cell.data.data == nullptr) continue;
         auto cellJson = nlohmann::json{};
-        cellJson["type_id"] = cell.data.data->typeId.load();
-        cellJson["current_signal"] = cell.data.data->currentSignal.load();
-        cellJson["next_signal"] = cell.data.data->nextSignal.load();
+        cellJson["type_id"] = cell.data.data->typeId;
+        cellJson["current_signal"] = cell.data.data->currentSignal;
+        cellJson["next_signal"] = cell.data.data->nextSignal;
         cellJson["rotation"] = rotationToAngle(cell.data.data->rotation);
         cellJson["coords"] = nlohmann::json::array({cell.x, cell.y});
         json.push_back(cellJson);

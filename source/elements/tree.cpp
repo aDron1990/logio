@@ -1,6 +1,6 @@
 #include "elements/tree.hpp"
 
-Tree::Tree(sf::Sprite disableSprite, sf::Sprite activeSprite) : m_disableSprite{disableSprite}, m_activeSprite{activeSprite} {}
+Tree::Tree(sf::IntRect disableSprite, sf::IntRect activeSprite) : m_disableSprite{disableSprite}, m_activeSprite{activeSprite} {}
 
 void Tree::onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept
 {
@@ -20,14 +20,14 @@ void Tree::onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept
     }
 }
 
-sf::Sprite Tree::getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noexcept
+sf::IntRect Tree::getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noexcept
 {
     assert(elementCell.data.data != nullptr);
     if (elementCell.data.data->currentSignal == 0) return m_disableSprite;
     return m_activeSprite;
 }
 
-sf::Sprite Tree::getDefaultSprite() const noexcept
+sf::IntRect Tree::getDefaultSprite() const noexcept
 {
     return m_disableSprite;
 }

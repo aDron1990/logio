@@ -9,6 +9,7 @@
 #include <optional>
 #include <memory>
 #include <filesystem>
+#include <atomic>
 
 CMRC_DECLARE(res);
 
@@ -24,6 +25,7 @@ public:
 
     size_t sizeX();
     size_t sizeY();
+    size_t count() const noexcept;
     void addTo(ptrdiff_t x, ptrdiff_t y, uint8_t id, Rotation rotation);
     void removeFrom(ptrdiff_t x, ptrdiff_t y);
     void sendSignal(ptrdiff_t x, ptrdiff_t y);
@@ -38,5 +40,6 @@ public:
 
 private:
     Grid<Cell> m_grid;
+    std::atomic_size_t m_count = 0;
 
 };

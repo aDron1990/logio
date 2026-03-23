@@ -14,7 +14,7 @@
 class UI
 {
 public:
-	UI(sf::RenderWindow& window, cmrc::file fontBin);
+	UI(sf::RenderWindow& window, sf::Texture& atlas, cmrc::file fontBin);
     ~UI();
     
     void processEvent(sf::RenderWindow& window, sf::Event& event);
@@ -39,4 +39,5 @@ private:
     std::atomic_bool m_inMenu{false};
     std::filesystem::path m_savePath;
     std::string m_saveName;
+    sf::Texture& m_atlas;
 };

@@ -1,6 +1,6 @@
 #include "jump.hpp"
 
-Jump::Jump(sf::Sprite disableSprite, sf::Sprite activeSprite) : m_disableSprite{disableSprite}, m_activeSprite{activeSprite} {}
+Jump::Jump(sf::IntRect disableSprite, sf::IntRect activeSprite) : m_disableSprite{disableSprite}, m_activeSprite{activeSprite} {}
 
 void Jump::onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept
 {
@@ -9,14 +9,14 @@ void Jump::onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept
     field.sendSignal(x * 2 + elementCell.x, y * 2 + elementCell.y);
 }
 
-sf::Sprite Jump::getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noexcept
+sf::IntRect Jump::getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noexcept
 {
     assert(elementCell.data.data != nullptr);
     if (elementCell.data.data->currentSignal == 0) return m_disableSprite;
     return m_activeSprite;
 }
 
-sf::Sprite Jump::getDefaultSprite() const noexcept
+sf::IntRect Jump::getDefaultSprite() const noexcept
 {
     return m_disableSprite;
 }

@@ -8,7 +8,8 @@
 
 #include <ranges>
 
-UI::UI(sf::RenderWindow& window, cmrc::file fontBin) 
+UI::UI(sf::RenderWindow& window, sf::Texture& atlas, cmrc::file fontBin) 
+: m_atlas{atlas}
 {
     IMGUI_CHECKVERSION();
     ImGui::SFML::Init(window);
@@ -68,7 +69,8 @@ void UI::drawSidebar(std::vector<std::unique_ptr<Element>>& elementTypes, std::a
         ImGui::PopID();
         ImGui::SetCursorPos(cursor);
         if (currentId == std::get<0>(element)) ImGui::DrawRectFilled({0, 0, BUTTON_SIZE, BUTTON_SIZE}, ACTIVE_ELEMENT_BG);
-        auto sprite = std::get<1>(element)->getDefaultSprite();
+        auto rect = std::get<1>(element)->getDefaultSprite();
+        auto sprite = sf::Sprite{m_atlas, rect};
         auto scale = sprite.getScale();
         scale = {(float)scale.x / SPRITE_SIZE, (float)scale.y / SPRITE_SIZE};
         sprite.setScale(scale * BUTTON_SIZE);

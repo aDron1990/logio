@@ -16,6 +16,7 @@ void Field::addTo(ptrdiff_t x, ptrdiff_t y, uint8_t id, Rotation rotation)
         return;
 
     auto& cell = m_grid.get(x, y);
+    if (!m_grid.get(x, y).data.data) m_count++;
     m_grid.get(x, y).data.data.reset(new ElementData{.rotation = rotation, .typeId = id});
 }
 
@@ -25,6 +26,7 @@ void Field::removeFrom(ptrdiff_t x, ptrdiff_t y)
         return;
 
     auto& cell = m_grid.get(x, y);
+    if (m_grid.get(x, y).data.data) m_count--;
     m_grid.get(x, y).data.data.reset();
 }
 
@@ -52,6 +54,7 @@ std::optional<sf::Vector2i> Field::mapCoordsTpGrid(sf::Vector2f worldPos)
 void Field::clear()
 {
     m_grid = Grid<Cell>{m_grid.sizeX(), m_grid.sizeY()};
+    m_count = 0;
 }
 
 void Field::save(std::filesystem::path path)
@@ -96,6 +99,7 @@ bool Field::load(std::filesystem::path path)
             .currentSignal = currentSignal,
             .nextSignal = nextSignal
         });
+        m_count++;
     }
     return true;
 }
@@ -118,4 +122,9 @@ size_t Field::sizeX()
 size_t Field::sizeY()
 {
     return m_grid.sizeY();
+}
+
+size_t Field::count() const noexcept
+{
+    return m_count;
 }

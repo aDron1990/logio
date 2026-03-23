@@ -5,12 +5,12 @@
 class Tree : public Element
 {
 public:
-    Tree(sf::Sprite disableSprite, sf::Sprite activeSprite);
+    Tree(sf::IntRect disableSprite, sf::IntRect activeSprite);
     void onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept override;
-    sf::Sprite getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noexcept override;
-    sf::Sprite getDefaultSprite() const noexcept override;
+    sf::IntRect getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noexcept override;
+    sf::IntRect getDefaultSprite() const noexcept override;
 
 private:
-    sf::Sprite m_disableSprite;
-    sf::Sprite m_activeSprite;
+    sf::IntRect m_disableSprite;
+    sf::IntRect m_activeSprite;
 };

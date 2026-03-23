@@ -13,9 +13,9 @@
 #include <execution>
 
 Game::Game() : 
-    m_window{sf::VideoMode::getDesktopMode(), "logio", 0}, 
+    m_window{sf::VideoMode::getDesktopMode(), "logio", 0, sf::ContextSettings{}}, 
     m_resources{cmrc::res::get_filesystem()}, 
-    m_ui{m_window, m_resources.open("resources/fonts/ubuntu.ttf")}
+    m_ui{m_window, m_atlas, m_resources.open("resources/fonts/ubuntu.ttf")}
 {
     m_window.setVerticalSyncEnabled(true);
     auto view = m_window.getView();
@@ -27,16 +27,16 @@ Game::Game() :
     m_atlas.loadFromMemory(atlasFile.begin(), atlasFile.size());
     m_signalSprite = sf::Sprite{m_atlas, {0, 0, 16, 16}};
 
-    m_elementTypes.emplace_back(std::make_unique<Wire>(sf::Sprite{m_atlas, {16 * 1 + 1, 0, 16, 16}}, sf::Sprite{m_atlas, {16 * 1 + 1, 16 * 1 + 1, 16, 16}}));
-    m_elementTypes.emplace_back(std::make_unique<Jump>(sf::Sprite{m_atlas, {16 * 2 + 2, 0, 16, 16}}, sf::Sprite{m_atlas, {16 * 2 + 2, 16 * 1 + 1, 16, 16}}));
-    m_elementTypes.emplace_back(std::make_unique<Not>(sf::Sprite{m_atlas, {16 * 3 + 3, 0, 16, 16}}, sf::Sprite{m_atlas, {16 * 3 + 3, 16 * 1 + 1, 16, 16}}));
+    m_elementTypes.emplace_back(std::make_unique<Wire>(sf::IntRect{16 * 1 + 1, 0, 16, 16}, sf::IntRect{16 * 1 + 1, 16 * 1 + 1, 16, 16}));
+    m_elementTypes.emplace_back(std::make_unique<Jump>(sf::IntRect{16 * 2 + 2, 0, 16, 16}, sf::IntRect{16 * 2 + 2, 16 * 1 + 1, 16, 16}));
+    m_elementTypes.emplace_back(std::make_unique<Not>(sf::IntRect{16 * 3 + 3, 0, 16, 16}, sf::IntRect{16 * 3 + 3, 16 * 1 + 1, 16, 16}));
     m_elementTypes.emplace_back(std::make_unique<And>
     (
-        sf::Sprite{m_atlas, {16 * 4 + 4, 0, 16, 16}}, 
-        sf::Sprite{m_atlas, {16 * 4 + 4, 16 * 2 + 2, 16, 16}}, 
-        sf::Sprite{m_atlas, {16 * 4 + 4, 16 * 1 + 1, 16, 16}}
+        sf::IntRect{16 * 4 + 4, 0, 16, 16}, 
+        sf::IntRect{16 * 4 + 4, 16 * 2 + 2, 16, 16}, 
+        sf::IntRect{16 * 4 + 4, 16 * 1 + 1, 16, 16}
     ));
-    m_elementTypes.emplace_back(std::make_unique<Tree>(sf::Sprite{m_atlas, {16 * 5 + 5, 0, 16, 16}}, sf::Sprite{m_atlas, {16 * 5 + 5, 16 * 1 + 1, 16, 16}}));
+    m_elementTypes.emplace_back(std::make_unique<Tree>(sf::IntRect{16 * 5 + 5, 0, 16, 16}, sf::IntRect{16 * 5 + 5, 16 * 1 + 1, 16, 16}));
 }
 
 void Game::run() 
@@ -54,14 +54,13 @@ void Game::windowProc() noexcept
         updateWindow();
         updateCamera();
         m_ui.beginDraw(m_window, m_frameDeltaTime);
-        m_window.clear({100, 100, 100, 255});
+        m_window.clear(sf::Color(100, 100, 100, 255));
         m_ui.drawMenu(m_running, 
             [this](const std::filesystem::path& path) { m_field.save(path); }, 
             [this](const std::filesystem::path& path) { return m_field.load(path); },
             [this]() { m_field.clear(); }
         );
         if (!m_ui.isInMenu()) m_ui.drawSidebar(m_elementTypes, m_currentId);
-        //ImGui::ShowDemoWindow();
         render();
         m_ui.endDraw(m_window);
         m_window.display();
@@ -85,7 +84,6 @@ void Game::updateWindow() noexcept
             case sf::Event::Closed: m_running = false; break;
             case sf::Event::KeyPressed: 
             {
-                //if (event.key.scancode == sf::Keyboard::Scancode::Escape) m_running = false;
                 if (event.key.scancode == sf::Keyboard::Scancode::Escape) m_ui.commandMenu();
                 if (event.key.scancode == sf::Keyboard::Scancode::Q) m_currentRotation = rotateCCW(m_currentRotation);
                 if (event.key.scancode == sf::Keyboard::Scancode::E) m_currentRotation = rotateCW(m_currentRotation);
@@ -172,15 +170,29 @@ void Game::render() noexcept
     fieldBackground.setFillColor(sf::Color{200, 200, 200, 255});
     m_window.draw(fieldBackground);
 
+    sf::VertexArray quads(sf::PrimitiveType::Quads, 4 * m_field.count());
+    size_t quadCount{};
     for (auto& cell : m_field)
     {
         if (cell.data.data == nullptr) continue;
-        auto sprite = m_elementTypes[cell.data.data->typeId]->getSprite(m_field, cell);
-        sprite.setOrigin({SPRITE_SIZE / 2, SPRITE_SIZE / 2});
-        sprite.setPosition({(float)cell.x * SPRITE_SIZE + SPRITE_SIZE / 2, (float)cell.y * SPRITE_SIZE + SPRITE_SIZE / 2});
-        sprite.setRotation(rotationToAngle(cell.data.data->rotation));
-        m_window.draw(sprite);
+        auto rect = m_elementTypes[cell.data.data->typeId]->getSprite(m_field, cell);
+
+        quads[quadCount * 4 + 0].position = sf::Vector2f(0.f + cell.x * SPRITE_SIZE, 0.f + cell.y * SPRITE_SIZE);
+        quads[quadCount * 4 + 1].position = sf::Vector2f(SPRITE_SIZE + cell.x * SPRITE_SIZE, 0.f + cell.y * SPRITE_SIZE);
+        quads[quadCount * 4 + 2].position = sf::Vector2f(SPRITE_SIZE + cell.x * SPRITE_SIZE, SPRITE_SIZE + cell.y * SPRITE_SIZE);
+        quads[quadCount * 4 + 3].position = sf::Vector2f(0.f + cell.x * SPRITE_SIZE, SPRITE_SIZE + cell.y * SPRITE_SIZE);
+
+        quads[quadCount * 4 + 0].texCoords = sf::Vector2f{(float)rect.left, (float)rect.top};
+        quads[quadCount * 4 + 1].texCoords = sf::Vector2f{(float)rect.left + rect.width, (float)rect.top};
+        quads[quadCount * 4 + 2].texCoords = sf::Vector2f{(float)rect.left + rect.width, (float)rect.top + rect.height};
+        quads[quadCount * 4 + 3].texCoords = sf::Vector2f{(float)rect.left, (float)rect.top + rect.height};
+
+        quadCount++;
     }
+
+    sf::RenderStates states{&m_atlas};
+    m_window.draw(quads, states);
+
 
     auto pos = sf::Mouse::getPosition();
     auto worldPos = m_window.mapPixelToCoords(pos);
@@ -188,7 +200,8 @@ void Game::render() noexcept
 
     if (!ImGui::GetIO().WantCaptureMouse && gridPos && m_window.hasFocus())
     {
-        auto ghost = m_elementTypes[m_currentId]->getDefaultSprite();
+        auto ghostRect = m_elementTypes[m_currentId]->getDefaultSprite();
+        auto ghost = sf::Sprite{m_atlas, ghostRect};
         ghost.setColor({255, 255, 255, 150});
         ghost.setOrigin({SPRITE_SIZE / 2, SPRITE_SIZE / 2});
         ghost.setPosition({(float)gridPos->x * SPRITE_SIZE + SPRITE_SIZE / 2, (float)gridPos->y * SPRITE_SIZE + SPRITE_SIZE / 2});

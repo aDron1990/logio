@@ -1,6 +1,6 @@
 #include "elements/and.hpp"
 
-And::And(sf::Sprite disableSprite, sf::Sprite activeSprite, sf::Sprite semiActiveSprite) : m_disableSprite{disableSprite}, m_activeSprite{activeSprite}, m_semiActiveSprite{semiActiveSprite} {}
+And::And(sf::IntRect disableSprite, sf::IntRect activeSprite, sf::IntRect semiActiveSprite) : m_disableSprite{disableSprite}, m_activeSprite{activeSprite}, m_semiActiveSprite{semiActiveSprite} {}
 
 void And::onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept
 {
@@ -10,7 +10,7 @@ void And::onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept
     field.sendSignal(elementCell.x + x, elementCell.y + y);
 }
 
-sf::Sprite And::getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noexcept
+sf::IntRect And::getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noexcept
 {
     assert(elementCell.data.data != nullptr);
     if (elementCell.data.data->currentSignal == 0) 
@@ -20,7 +20,7 @@ sf::Sprite And::getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noe
     return m_activeSprite;
 }
 
-sf::Sprite And::getDefaultSprite() const noexcept
+sf::IntRect And::getDefaultSprite() const noexcept
 {
     return m_disableSprite;
 }

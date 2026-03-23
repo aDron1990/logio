@@ -68,4 +68,6 @@ inline std::tuple<sf::Vector2f, sf::Vector2f, sf::Vector2f, sf::Vector2f> rotati
         case Rotation::Down:    return {br, bl, tl, tr};
         case Rotation::Right:    return {bl, tl, tr, br};
     }
+
+    return {tl, tr, br, bl};
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <SFML/Graphics.hpp>
+
 #include <cstdint>
 #include <utility>
 
@@ -49,5 +51,21 @@ constexpr std::pair<int, int> rotationToVector(Rotation rotation) noexcept
         case Rotation::Down: return std::make_pair(0, 1);
         case Rotation::Left: return std::make_pair(-1, 0);
         default: return std::make_pair(0, 0);
+    }
+}
+
+inline std::tuple<sf::Vector2f, sf::Vector2f, sf::Vector2f, sf::Vector2f> rotationToTexCoords(Rotation rotation, sf::IntRect rect) noexcept
+{
+    auto tl = sf::Vector2f{(float)rect.left, (float)rect.top};                              // top left
+    auto tr = sf::Vector2f{(float)rect.left + rect.width, (float)rect.top};                 // top right
+    auto br = sf::Vector2f{(float)rect.left + rect.width, (float)rect.top + rect.height};   // bottom right
+    auto bl = sf::Vector2f{(float)rect.left, (float)rect.top + rect.height};                // bottom left
+
+    switch (rotation)
+    {
+        case Rotation::Up:      return {tl, tr, br, bl};
+        case Rotation::Left:   return {tr, br, bl, tl};
+        case Rotation::Down:    return {br, bl, tl, tr};
+        case Rotation::Right:    return {bl, tl, tr, br};
     }
 }

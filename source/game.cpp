@@ -182,10 +182,12 @@ void Game::render() noexcept
         quads[quadCount * 4 + 2].position = sf::Vector2f(SPRITE_SIZE + cell.x * SPRITE_SIZE, SPRITE_SIZE + cell.y * SPRITE_SIZE);
         quads[quadCount * 4 + 3].position = sf::Vector2f(0.f + cell.x * SPRITE_SIZE, SPRITE_SIZE + cell.y * SPRITE_SIZE);
 
-        quads[quadCount * 4 + 0].texCoords = sf::Vector2f{(float)rect.left, (float)rect.top};
-        quads[quadCount * 4 + 1].texCoords = sf::Vector2f{(float)rect.left + rect.width, (float)rect.top};
-        quads[quadCount * 4 + 2].texCoords = sf::Vector2f{(float)rect.left + rect.width, (float)rect.top + rect.height};
-        quads[quadCount * 4 + 3].texCoords = sf::Vector2f{(float)rect.left, (float)rect.top + rect.height};
+        auto [v0, v1, v2, v3] = rotationToTexCoords(cell.data.data->rotation, rect);
+
+        quads[quadCount * 4 + 0].texCoords = v0;
+        quads[quadCount * 4 + 1].texCoords = v1;
+        quads[quadCount * 4 + 2].texCoords = v2;
+        quads[quadCount * 4 + 3].texCoords = v3;
 
         quadCount++;
     }

@@ -1,5 +1,4 @@
 #include "game.hpp"
-#include "imgui_theme.hpp"
 #include "defines.hpp"
 
 #include "elements/wire.hpp"
@@ -8,14 +7,8 @@
 #include "elements/and.hpp"
 #include "elements/tree.hpp"
 
-#include <print>
-#include <ranges>
-#include <execution>
-
-Game::Game() : 
-    m_window{sf::VideoMode::getDesktopMode(), "logio", 0, sf::ContextSettings{}}, 
-    m_resources{cmrc::res::get_filesystem()}, 
-    m_ui{m_window, m_atlas, m_resources.open("resources/fonts/ubuntu.ttf")}
+Game::Game()
+    : m_window{sf::VideoMode::getDesktopMode(), "logio", 0, sf::ContextSettings{}}, m_resources{cmrc::res::get_filesystem()}, m_ui{m_window, m_atlas, m_resources.open("resources/fonts/ubuntu.ttf")}
 {
     m_window.setVerticalSyncEnabled(true);
     auto view = m_window.getView();
@@ -30,22 +23,17 @@ Game::Game() :
     m_elementTypes.emplace_back(std::make_unique<Wire>(sf::IntRect{16 * 1 + 1, 0, 16, 16}, sf::IntRect{16 * 1 + 1, 16 * 1 + 1, 16, 16}));
     m_elementTypes.emplace_back(std::make_unique<Jump>(sf::IntRect{16 * 2 + 2, 0, 16, 16}, sf::IntRect{16 * 2 + 2, 16 * 1 + 1, 16, 16}));
     m_elementTypes.emplace_back(std::make_unique<Not>(sf::IntRect{16 * 3 + 3, 0, 16, 16}, sf::IntRect{16 * 3 + 3, 16 * 1 + 1, 16, 16}));
-    m_elementTypes.emplace_back(std::make_unique<And>
-    (
-        sf::IntRect{16 * 4 + 4, 0, 16, 16}, 
-        sf::IntRect{16 * 4 + 4, 16 * 2 + 2, 16, 16}, 
-        sf::IntRect{16 * 4 + 4, 16 * 1 + 1, 16, 16}
-    ));
+    m_elementTypes.emplace_back(std::make_unique<And>(sf::IntRect{16 * 4 + 4, 0, 16, 16}, sf::IntRect{16 * 4 + 4, 16 * 2 + 2, 16, 16}, sf::IntRect{16 * 4 + 4, 16 * 1 + 1, 16, 16}));
     m_elementTypes.emplace_back(std::make_unique<Tree>(sf::IntRect{16 * 5 + 5, 0, 16, 16}, sf::IntRect{16 * 5 + 5, 16 * 1 + 1, 16, 16}));
 }
 
-void Game::run() 
+void Game::run()
 {
     m_gameThread = std::jthread{[this]() { gameProc(); }};
     windowProc();
 }
 
-void Game::windowProc() noexcept 
+void Game::windowProc() noexcept
 {
     while (m_running)
     {
@@ -55,11 +43,8 @@ void Game::windowProc() noexcept
         updateCamera();
         m_ui.beginDraw(m_window, m_frameDeltaTime);
         m_window.clear(sf::Color(100, 100, 100, 255));
-        m_ui.drawMenu(m_running, 
-            [this](const std::filesystem::path& path) { m_field.save(path); }, 
-            [this](const std::filesystem::path& path) { return m_field.load(path); },
-            [this]() { m_field.clear(); }
-        );
+        m_ui.drawMenu(
+            m_running, [this](const std::filesystem::path& path) { m_field.save(path); }, [this](const std::filesystem::path& path) { return m_field.load(path); }, [this]() { m_field.clear(); });
         if (!m_ui.isInMenu()) m_ui.drawSidebar(m_elementTypes, m_currentId);
         render();
         m_ui.endDraw(m_window);
@@ -82,8 +67,7 @@ void Game::updateWindow() noexcept
         switch (event.type)
         {
             case sf::Event::Closed: m_running = false; break;
-            case sf::Event::KeyPressed: 
-            {
+            case sf::Event::KeyPressed: {
                 if (event.key.scancode == sf::Keyboard::Scancode::Escape) m_ui.commandMenu();
                 if (event.key.scancode == sf::Keyboard::Scancode::Q) m_currentRotation = rotateCCW(m_currentRotation);
                 if (event.key.scancode == sf::Keyboard::Scancode::E) m_currentRotation = rotateCW(m_currentRotation);
@@ -95,23 +79,22 @@ void Game::updateWindow() noexcept
                     if (number >= m_elementTypes.size()) break;
                     m_currentId = number;
                 }
+                break;
             }
-            break;
-            case sf::Event::MouseWheelScrolled:
-            {
+            case sf::Event::MouseWheelScrolled: {
                 if (io.WantCaptureMouse) break;
-                if (!event.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel) break;
+                if (!(event.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel)) break;
                 auto view = m_window.getView();
                 auto zoom = std::abs(event.mouseWheelScroll.delta - 0.1f);
                 view.zoom(zoom);
                 m_window.setView(view);
                 break;
             }
+            default: break;
         }
     }
 
-    if (!m_window.hasFocus())
-        return;
+    if (!m_window.hasFocus()) return;
 
     if (!io.WantCaptureMouse && sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && gridPos)
     {
@@ -195,7 +178,6 @@ void Game::render() noexcept
     sf::RenderStates states{&m_atlas};
     m_window.draw(quads, states);
 
-
     auto pos = sf::Mouse::getPosition();
     auto worldPos = m_window.mapPixelToCoords(pos);
     auto gridPos = m_field.mapCoordsTpGrid(worldPos);
@@ -205,8 +187,8 @@ void Game::render() noexcept
         auto ghostRect = m_elementTypes[m_currentId]->getDefaultSprite();
         auto ghost = sf::Sprite{m_atlas, ghostRect};
         ghost.setColor({255, 255, 255, 150});
-        ghost.setOrigin({SPRITE_SIZE / 2, SPRITE_SIZE / 2});
-        ghost.setPosition({(float)gridPos->x * SPRITE_SIZE + SPRITE_SIZE / 2, (float)gridPos->y * SPRITE_SIZE + SPRITE_SIZE / 2});
+        ghost.setOrigin({static_cast<float>(SPRITE_SIZE) / 2.0f, static_cast<float>(SPRITE_SIZE) / 2.0f});
+        ghost.setPosition({(float)gridPos->x * SPRITE_SIZE + (float)SPRITE_SIZE / 2, (float)gridPos->y * SPRITE_SIZE + (float)SPRITE_SIZE / 2});
         ghost.setRotation(rotationToAngle(m_currentRotation));
         m_window.draw(ghost);
     }
@@ -220,8 +202,7 @@ void Game::gameProc() noexcept
         m_updateDeltaTime = m_updateDeltaClock.restart();
         sf::Clock clock;
         clock.restart();
-        if (!m_ui.isInMenu())
-            updateField();
+        if (!m_ui.isInMenu()) updateField();
         m_updateDelta = ((float)clock.getElapsedTime().asMicroseconds() / 1000.0f);
         auto sleepTime = std::chrono::milliseconds(m_updateTimes[m_currentUpdateTimeId] - (int)m_updateDelta);
         std::this_thread::sleep_for(sleepTime);
@@ -230,17 +211,18 @@ void Game::gameProc() noexcept
 
 void Game::updateField() noexcept
 {
-    std::for_each(m_field.begin(), m_field.end(), [this](auto& elementData)
-    {
-        if (elementData.data.data == nullptr) return;
-        auto& element = m_elementTypes[elementData.data.data->typeId];
-        element->onUpdate(m_field, elementData);
-    });
     std::for_each(m_field.begin(), m_field.end(),
-    [this](auto& elementData)
-    {
-        if (elementData.data.data == nullptr) return;
-        elementData.data.data->currentSignal = elementData.data.data->nextSignal;
-        elementData.data.data->nextSignal = 0;
-    });
+        [this](auto& elementData)
+        {
+            if (elementData.data.data == nullptr) return;
+            auto& element = m_elementTypes[elementData.data.data->typeId];
+            element->onUpdate(m_field, elementData);
+        });
+    std::for_each(m_field.begin(), m_field.end(),
+        [this](auto& elementData)
+        {
+            if (elementData.data.data == nullptr) return;
+            elementData.data.data->currentSignal = elementData.data.data->nextSignal;
+            elementData.data.data->nextSignal = 0;
+        });
 }

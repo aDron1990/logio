@@ -58,6 +58,12 @@ private:
     bool m_blockRMB = false;
     Buffer m_buffer;
 
+    enum class SelectType
+    {
+        Copy,
+        Delete
+    } m_selectType{SelectType::Copy};
+
     Selection m_selection;
 
     World m_world;

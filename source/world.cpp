@@ -97,7 +97,7 @@ bool World::load(std::filesystem::path path) noexcept
             auto rotation = static_cast<Rotation>(cellJson["rotation"].get<float>());
 
             auto entity = new_registry.create();
-            new_registry.emplace_or_replace<ElementData>(entity, ElementData{.rotation = rotation, .typeId = typeId, .currentSignal = 0, .nextSignal = 0, .x = x, .y = y});
+            new_registry.emplace_or_replace<ElementData>(entity, ElementData{.rotation = rotation, .typeId = typeId, .currentSignal = currentSignal, .nextSignal = nextSignal, .x = x, .y = y});
             new_grid.insert_or_assign(Coord{x, y}, entity);
 
             m_count++;

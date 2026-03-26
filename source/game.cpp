@@ -112,6 +112,12 @@ void Game::updateWindow() noexcept
                 }
                 if (event.key.scancode == sf::Keyboard::Scancode::C && event.key.control)
                 {
+                    m_selectType = SelectType::Copy;
+                    m_selection.activate();
+                }
+                if (event.key.scancode == sf::Keyboard::Scancode::Delete || event.key.scancode == sf::Keyboard::Scancode::Backspace)
+                {
+                    m_selectType = SelectType::Delete;
                     m_selection.activate();
                 }
                 break;
@@ -124,13 +130,21 @@ void Game::updateWindow() noexcept
                     if (m_selection.isComplited())
                     {
                         auto selectionRect = m_selection.getSelectionRect();
-                        m_world.copy(m_buffer, selectionRect);
+                        if (m_selectType == SelectType::Copy)
+                        {
+                            m_world.copy(m_buffer, selectionRect);
+                        }
+                        else if (m_selectType == SelectType::Delete)
+                        {
+                            m_world.clear(selectionRect);
+                            m_selection.deactivate();
+                        }
                     }
                     m_blockRMB = true;
                 }
                 else if (event.mouseButton.button == sf::Mouse::Left && m_selection.isComplited())
                 {
-                    m_world.paste(m_buffer, gridPos);
+                    if (m_selectType == SelectType::Copy) m_world.paste(m_buffer, gridPos);
                     m_blockRMB = true;
                 }
                 break;

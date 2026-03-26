@@ -1,19 +1,18 @@
 #include "elements/wire.hpp"
+#include "element_data.hpp"
 
 Wire::Wire(sf::IntRect disableSprite, sf::IntRect activeSprite) : m_disableSprite{disableSprite}, m_activeSprite{activeSprite} {}
 
-void Wire::onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept
+void Wire::onUpdate(World& world, const ElementData& element) noexcept
 {
-    assert(elementCell.data.data != nullptr);
-    if (elementCell.data.data->currentSignal == 0) return;
-    auto [x, y] = rotationToVector(elementCell.data.data->rotation);
-    field.sendSignal(elementCell.x + x, elementCell.y + y);
+    if (element.currentSignal == 0) return;
+    auto [x, y] = rotationToVector(element.rotation);
+    world.sendSignal(element.x + x, element.y + y);
 }
 
-sf::IntRect Wire::getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noexcept 
+sf::IntRect Wire::getSprite(const ElementData& element) const noexcept
 {
-    assert(elementCell.data.data != nullptr);
-    if (elementCell.data.data->currentSignal == 0) return m_disableSprite;
+    if (element.currentSignal == 0) return m_disableSprite;
     return m_activeSprite;
 }
 

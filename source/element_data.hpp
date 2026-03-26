@@ -2,7 +2,6 @@
 
 #include "rotation.hpp"
 
-#include <atomic>
 #include <cstdint>
 
 struct ElementData
@@ -11,4 +10,13 @@ struct ElementData
     uint8_t typeId;
     uint8_t currentSignal{};
     uint8_t nextSignal{};
+    ptrdiff_t x;
+    ptrdiff_t y;
+};
+
+struct Coord
+{
+    ptrdiff_t x;
+    ptrdiff_t y;
+    bool operator==(const Coord& other) const { return x == other.x && y == other.y; }
 };

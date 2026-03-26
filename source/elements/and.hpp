@@ -6,8 +6,8 @@ class And : public Element
 {
 public:
     And(sf::IntRect disableSprite, sf::IntRect activeSprite, sf::IntRect semiActiveSprite);
-    void onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept override;
-    sf::IntRect getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noexcept override;
+    void onUpdate(World& world, const ElementData& element) noexcept override;
+    sf::IntRect getSprite(const ElementData& element) const noexcept override;
     sf::IntRect getDefaultSprite() const noexcept override;
 
 private:

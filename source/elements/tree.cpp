@@ -2,28 +2,26 @@
 
 Tree::Tree(sf::IntRect disableSprite, sf::IntRect activeSprite) : m_disableSprite{disableSprite}, m_activeSprite{activeSprite} {}
 
-void Tree::onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept
+void Tree::onUpdate(World& world, const ElementData& element) noexcept
 {
-    assert(elementCell.data.data != nullptr);
-    if (elementCell.data.data->currentSignal == 0) return;
+    if (element.currentSignal == 0) return;
     {
-        auto [x, y] = rotationToVector(elementCell.data.data->rotation);
-        field.sendSignal(elementCell.x + x, elementCell.y + y);
+        auto [x, y] = rotationToVector(element.rotation);
+        world.sendSignal(element.x + x, element.y + y);
     }
     {
-        auto [x, y] = rotationToVector(rotateCW(elementCell.data.data->rotation));
-        field.sendSignal(elementCell.x + x, elementCell.y + y);
+        auto [x, y] = rotationToVector(rotateCW(element.rotation));
+        world.sendSignal(element.x + x, element.y + y);
     }
     {
-        auto [x, y] = rotationToVector(rotateCCW(elementCell.data.data->rotation));
-        field.sendSignal(elementCell.x + x, elementCell.y + y);
+        auto [x, y] = rotationToVector(rotateCCW(element.rotation));
+        world.sendSignal(element.x + x, element.y + y);
     }
 }
 
-sf::IntRect Tree::getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noexcept
+sf::IntRect Tree::getSprite(const ElementData& element) const noexcept
 {
-    assert(elementCell.data.data != nullptr);
-    if (elementCell.data.data->currentSignal == 0) return m_disableSprite;
+    if (element.currentSignal == 0) return m_disableSprite;
     return m_activeSprite;
 }
 

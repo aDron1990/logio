@@ -2,20 +2,18 @@
 
 And::And(sf::IntRect disableSprite, sf::IntRect activeSprite, sf::IntRect semiActiveSprite) : m_disableSprite{disableSprite}, m_activeSprite{activeSprite}, m_semiActiveSprite{semiActiveSprite} {}
 
-void And::onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept
+void And::onUpdate(World& world, const ElementData& element) noexcept
 {
-    assert(elementCell.data.data != nullptr);
-    if (elementCell.data.data->currentSignal < 2) return;
-    auto [x, y] = rotationToVector(elementCell.data.data->rotation);
-    field.sendSignal(elementCell.x + x, elementCell.y + y);
+    if (element.currentSignal < 2) return;
+    auto [x, y] = rotationToVector(element.rotation);
+    world.sendSignal(element.x + x, element.y + y);
 }
 
-sf::IntRect And::getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noexcept
+sf::IntRect And::getSprite(const ElementData& element) const noexcept
 {
-    assert(elementCell.data.data != nullptr);
-    if (elementCell.data.data->currentSignal == 0) 
+    if (element.currentSignal == 0)
         return m_disableSprite;
-    else if (elementCell.data.data->currentSignal == 1)
+    else if (element.currentSignal == 1)
         return m_semiActiveSprite;
     return m_activeSprite;
 }

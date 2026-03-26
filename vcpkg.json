@@ -9,6 +9,7 @@
     },
     "imgui-sfml",
     "nlohmann-json",
-    "sfml"
+    "sfml",
+    "entt"
   ]
 }

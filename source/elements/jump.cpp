@@ -2,17 +2,16 @@
 
 Jump::Jump(sf::IntRect disableSprite, sf::IntRect activeSprite) : m_disableSprite{disableSprite}, m_activeSprite{activeSprite} {}
 
-void Jump::onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept
+void Jump::onUpdate(World& world, const ElementData& element) noexcept
 {
-    if (elementCell.data.data->currentSignal == 0) return;
-    auto [x, y] = rotationToVector(elementCell.data.data->rotation);
-    field.sendSignal(x * 2 + elementCell.x, y * 2 + elementCell.y);
+    if (element.currentSignal == 0) return;
+    auto [x, y] = rotationToVector(element.rotation);
+    world.sendSignal(x * 2 + element.x, y * 2 + element.y);
 }
 
-sf::IntRect Jump::getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noexcept
+sf::IntRect Jump::getSprite(const ElementData& element) const noexcept
 {
-    assert(elementCell.data.data != nullptr);
-    if (elementCell.data.data->currentSignal == 0) return m_disableSprite;
+    if (element.currentSignal == 0) return m_disableSprite;
     return m_activeSprite;
 }
 

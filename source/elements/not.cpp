@@ -2,17 +2,16 @@
 
 Not::Not(sf::IntRect disableSprite, sf::IntRect activeSprite) : m_disableSprite{disableSprite}, m_activeSprite{activeSprite} {}
 
-void Not::onUpdate(Field& field, Grid<Cell>::Cell& elementCell) noexcept
+void Not::onUpdate(World& world, const ElementData& element) noexcept
 {
-    if (elementCell.data.data->currentSignal != 0) return;
-    auto [x, y] = rotationToVector(elementCell.data.data->rotation);
-    field.sendSignal(elementCell.x + x, elementCell.y + y);
+    if (element.currentSignal != 0) return;
+    auto [x, y] = rotationToVector(element.rotation);
+    world.sendSignal(element.x + x, element.y + y);
 }
 
-sf::IntRect Not::getSprite(Field& field, Grid<Cell>::Cell& elementCell) const noexcept
+sf::IntRect Not::getSprite(const ElementData& element) const noexcept
 {
-    assert(elementCell.data.data != nullptr);
-    if (elementCell.data.data->currentSignal == 0) return m_disableSprite;
+    if (element.currentSignal == 0) return m_disableSprite;
     return m_activeSprite;
 }
 

@@ -6,6 +6,7 @@
 #include "elements/not.hpp"
 #include "elements/and.hpp"
 #include "elements/tree.hpp"
+#include <mutex>
 
 Game::Game()
     : m_window{sf::VideoMode::getDesktopMode(), "logio", 0, sf::ContextSettings{}}, m_resources{cmrc::res::get_filesystem()}, m_ui{m_window, m_atlas, m_resources.open("resources/fonts/ubuntu.ttf")}
@@ -42,9 +43,9 @@ void Game::windowProc() noexcept
         updateWindow();
         updateCamera();
         m_ui.beginDraw(m_window, m_frameDeltaTime);
-        m_window.clear(sf::Color(100, 100, 100, 255));
+        m_window.clear(sf::Color(200, 200, 200, 255));
         m_ui.drawMenu(
-            m_running, [this](const std::filesystem::path& path) { m_field.save(path); }, [this](const std::filesystem::path& path) { return m_field.load(path); }, [this]() { m_field.clear(); });
+            m_running, [this](const std::filesystem::path& path) { m_world.save(path); }, [this](const std::filesystem::path& path) { return m_world.load(path); }, [this]() { m_world.clear(); });
         if (!m_ui.isInMenu()) m_ui.drawSidebar(m_elementTypes, m_currentId);
         render();
         m_ui.endDraw(m_window);
@@ -59,7 +60,7 @@ void Game::updateWindow() noexcept
 
     auto pos = sf::Mouse::getPosition();
     auto worldPos = m_window.mapPixelToCoords(pos);
-    auto gridPos = m_field.mapCoordsTpGrid(worldPos);
+    auto gridPos = m_world.mapCoordsToGrid(worldPos);
 
     while (m_window.pollEvent(event))
     {
@@ -95,18 +96,18 @@ void Game::updateWindow() noexcept
     }
 
     if (!m_window.hasFocus()) return;
-
-    if (!io.WantCaptureMouse && sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && gridPos)
+    std::unique_lock lock{m_mutex};
+    if (!io.WantCaptureMouse && sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
     {
-        m_field.sendSignal(gridPos->x, gridPos->y);
+        m_world.sendSignal(gridPos.x, gridPos.y);
     }
-    if (!io.WantCaptureMouse && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) && gridPos)
+    if (!io.WantCaptureMouse && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
     {
-        m_field.addTo(gridPos->x, gridPos->y, m_currentId, m_currentRotation);
+        m_world.addElement(gridPos.x, gridPos.y, m_currentId, m_currentRotation);
     }
-    if (!io.WantCaptureMouse && sf::Mouse::isButtonPressed(sf::Mouse::Button::Right) && gridPos)
+    if (!io.WantCaptureMouse && sf::Mouse::isButtonPressed(sf::Mouse::Button::Right))
     {
-        m_field.removeFrom(gridPos->x, gridPos->y);
+        m_world.removeElement(gridPos.x, gridPos.y);
     }
 }
 
@@ -147,48 +148,45 @@ void Game::updateCamera() noexcept
 
 void Game::render() noexcept
 {
-    auto width = static_cast<float>(m_field.sizeX() * SPRITE_SIZE);
-    auto height = static_cast<float>(m_field.sizeY() * SPRITE_SIZE);
-    auto fieldBackground = sf::RectangleShape{{width, height}};
-    fieldBackground.setFillColor(sf::Color{200, 200, 200, 255});
-    m_window.draw(fieldBackground);
-
-    sf::VertexArray quads(sf::PrimitiveType::Quads, 4 * m_field.count());
-    size_t quadCount{};
-    for (auto& cell : m_field)
     {
-        if (cell.data.data == nullptr) continue;
-        auto rect = m_elementTypes[cell.data.data->typeId]->getSprite(m_field, cell);
+        std::unique_lock lock{m_mutex};
+        sf::VertexArray quads(sf::PrimitiveType::Quads, 4 * m_world.count());
+        size_t quadCount{};
+        auto view = m_world.getElementsView();
+        for (auto [_, element] : view.each())
+        {
+            auto rect = m_elementTypes[element.typeId]->getSprite(element);
 
-        quads[quadCount * 4 + 0].position = sf::Vector2f(0.f + cell.x * SPRITE_SIZE, 0.f + cell.y * SPRITE_SIZE);
-        quads[quadCount * 4 + 1].position = sf::Vector2f(SPRITE_SIZE + cell.x * SPRITE_SIZE, 0.f + cell.y * SPRITE_SIZE);
-        quads[quadCount * 4 + 2].position = sf::Vector2f(SPRITE_SIZE + cell.x * SPRITE_SIZE, SPRITE_SIZE + cell.y * SPRITE_SIZE);
-        quads[quadCount * 4 + 3].position = sf::Vector2f(0.f + cell.x * SPRITE_SIZE, SPRITE_SIZE + cell.y * SPRITE_SIZE);
+            quads[quadCount * 4 + 0].position = sf::Vector2f(0.f + element.x * SPRITE_SIZE, 0.f + element.y * SPRITE_SIZE);
+            quads[quadCount * 4 + 1].position = sf::Vector2f(SPRITE_SIZE + element.x * SPRITE_SIZE, 0.f + element.y * SPRITE_SIZE);
+            quads[quadCount * 4 + 2].position = sf::Vector2f(SPRITE_SIZE + element.x * SPRITE_SIZE, SPRITE_SIZE + element.y * SPRITE_SIZE);
+            quads[quadCount * 4 + 3].position = sf::Vector2f(0.f + element.x * SPRITE_SIZE, SPRITE_SIZE + element.y * SPRITE_SIZE);
 
-        auto [v0, v1, v2, v3] = rotationToTexCoords(cell.data.data->rotation, rect);
+            auto [v0, v1, v2, v3] = rotationToTexCoords(element.rotation, rect);
 
-        quads[quadCount * 4 + 0].texCoords = v0;
-        quads[quadCount * 4 + 1].texCoords = v1;
-        quads[quadCount * 4 + 2].texCoords = v2;
-        quads[quadCount * 4 + 3].texCoords = v3;
+            quads[quadCount * 4 + 0].texCoords = v0;
+            quads[quadCount * 4 + 1].texCoords = v1;
+            quads[quadCount * 4 + 2].texCoords = v2;
+            quads[quadCount * 4 + 3].texCoords = v3;
 
-        quadCount++;
+            quadCount++;
+        }
+
+        sf::RenderStates states{&m_atlas};
+        m_window.draw(quads, states);
     }
-
-    sf::RenderStates states{&m_atlas};
-    m_window.draw(quads, states);
 
     auto pos = sf::Mouse::getPosition();
     auto worldPos = m_window.mapPixelToCoords(pos);
-    auto gridPos = m_field.mapCoordsTpGrid(worldPos);
+    auto gridPos = m_world.mapCoordsToGrid(worldPos);
 
-    if (!ImGui::GetIO().WantCaptureMouse && gridPos && m_window.hasFocus())
+    if (!ImGui::GetIO().WantCaptureMouse && m_window.hasFocus())
     {
         auto ghostRect = m_elementTypes[m_currentId]->getDefaultSprite();
         auto ghost = sf::Sprite{m_atlas, ghostRect};
         ghost.setColor({255, 255, 255, 150});
         ghost.setOrigin({static_cast<float>(SPRITE_SIZE) / 2.0f, static_cast<float>(SPRITE_SIZE) / 2.0f});
-        ghost.setPosition({(float)gridPos->x * SPRITE_SIZE + (float)SPRITE_SIZE / 2, (float)gridPos->y * SPRITE_SIZE + (float)SPRITE_SIZE / 2});
+        ghost.setPosition({(float)gridPos.x * SPRITE_SIZE + (float)SPRITE_SIZE / 2, (float)gridPos.y * SPRITE_SIZE + (float)SPRITE_SIZE / 2});
         ghost.setRotation(rotationToAngle(m_currentRotation));
         m_window.draw(ghost);
     }
@@ -211,18 +209,17 @@ void Game::gameProc() noexcept
 
 void Game::updateField() noexcept
 {
-    std::for_each(m_field.begin(), m_field.end(),
-        [this](auto& elementData)
-        {
-            if (elementData.data.data == nullptr) return;
-            auto& element = m_elementTypes[elementData.data.data->typeId];
-            element->onUpdate(m_field, elementData);
-        });
-    std::for_each(m_field.begin(), m_field.end(),
-        [this](auto& elementData)
-        {
-            if (elementData.data.data == nullptr) return;
-            elementData.data.data->currentSignal = elementData.data.data->nextSignal;
-            elementData.data.data->nextSignal = 0;
-        });
+    std::unique_lock lock{m_mutex};
+    auto elements = m_world.getElementsView();
+    for (auto [_, elementData] : elements.each())
+    {
+        auto& element = m_elementTypes[elementData.typeId];
+        element->onUpdate(m_world, elementData);
+    }
+
+    for (auto [_, elementData] : elements.each())
+    {
+        elementData.currentSignal = elementData.nextSignal;
+        elementData.nextSignal = 0;
+    }
 }

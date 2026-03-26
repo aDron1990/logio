@@ -1,17 +1,20 @@
 #pragma once
 
-#include "field.hpp"
+#include "world.hpp"
 #include "element.hpp"
 #include "ui.hpp"
 
 #include <SFML/Graphics.hpp>
 #include <SFML/OpenGL.hpp>
 #include <cmrc/cmrc.hpp>
+#include <entt/entity/fwd.hpp>
 #include <imgui.h>
 #include <imgui-SFML.h>
+#include <entt/entt.hpp>
 
 #include <thread>
 #include <atomic>
+#include <mutex>
 #include <vector>
 
 CMRC_DECLARE(res);
@@ -48,7 +51,8 @@ private:
     Rotation m_currentRotation{Rotation::Up};
     const std::vector<int> m_updateTimes = {10, 25, 50, 100, 250, 500, 1000};
     std::atomic_int m_currentUpdateTimeId{0};
+    std::mutex m_mutex;
 
-    Field m_field;
+    World m_world;
     UI m_ui;
 };

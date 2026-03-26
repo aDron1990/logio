@@ -1,6 +1,7 @@
 #include "game.hpp"
 #include "defines.hpp"
 
+#include "element_data.hpp"
 #include "elements/wire.hpp"
 #include "elements/jump.hpp"
 #include "elements/not.hpp"
@@ -15,7 +16,9 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 
+#include <entt/entity/fwd.hpp>
 #include <mutex>
+#include <vector>
 
 Game::Game()
     : m_window{sf::VideoMode::getDesktopMode(), "logio", 0, sf::ContextSettings{}}, m_resources{cmrc::res::get_filesystem()}, m_ui{m_window, m_atlas, m_resources.open("resources/fonts/ubuntu.ttf")}
@@ -203,9 +206,11 @@ void Game::updateCamera() noexcept
 
 void Game::render() noexcept
 {
+
+    sf::VertexArray quads(sf::PrimitiveType::Quads);
     {
         std::unique_lock lock{m_mutex};
-        sf::VertexArray quads(sf::PrimitiveType::Quads, 4 * m_world.count());
+        quads.resize(4 * m_world.count());
         size_t quadCount{};
         auto view = m_world.getElementsView();
         for (auto [_, element] : view.each())
@@ -226,10 +231,10 @@ void Game::render() noexcept
 
             quadCount++;
         }
-
-        sf::RenderStates states{&m_atlas};
-        m_window.draw(quads, states);
     }
+
+    sf::RenderStates states{&m_atlas};
+    m_window.draw(quads, states);
 
     if (m_selection.isSecondClickWait())
     {

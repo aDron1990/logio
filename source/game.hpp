@@ -35,6 +35,7 @@ private:
     void updateWindow() noexcept;
     void updateCamera() noexcept;
     void render() noexcept;
+    bool loadBufferFromFile(const std::filesystem::path& path) noexcept;
 
 private:
     std::atomic_bool m_running{true};

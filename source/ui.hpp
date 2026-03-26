@@ -14,19 +14,17 @@
 class UI
 {
 public:
-	UI(sf::RenderWindow& window, sf::Texture& atlas, cmrc::file fontBin);
+    UI(sf::RenderWindow& window, sf::Texture& atlas, cmrc::file fontBin);
     ~UI();
-    
+
     void processEvent(sf::RenderWindow& window, sf::Event& event);
     void beginDraw(sf::RenderWindow& window, sf::Time deltaTime);
     void endDraw(sf::RenderWindow& window);
 
     void drawSidebar(std::vector<std::unique_ptr<Element>>& elementTypes, std::atomic_int& currentId);
 
-    void drawMenu(std::atomic_bool& running, 
-        std::function<void(const std::filesystem::path& path)> onSave, 
-        std::function<bool(const std::filesystem::path& path)> onLoad,
-        std::function<void()> onNew);
+    void drawMenu(std::atomic_bool& running, std::function<void(const std::filesystem::path& path)> onSave, std::function<bool(const std::filesystem::path& path)> onLoad,
+        std::function<bool(const std::filesystem::path& path)> onPaste, std::function<void()> onNew);
     void commandMenu();
     bool isInMenu();
 

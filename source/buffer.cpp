@@ -31,8 +31,8 @@ void Buffer::recalcBounds() noexcept
         }
         if (!m_minY || !m_maxY)
         {
-            m_minY = element.x;
-            m_maxY = element.x;
+            m_minY = element.y;
+            m_maxY = element.y;
         }
         else
         {

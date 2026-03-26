@@ -19,6 +19,8 @@
 #include <SFML/Window/Keyboard.hpp>
 
 #include <entt/entity/fwd.hpp>
+#include <fstream>
+#include <sstream>
 #include <mutex>
 #include <vector>
 #include <iostream>
@@ -49,6 +51,22 @@ void Game::run()
     windowProc();
 }
 
+bool Game::loadBufferFromFile(const std::filesystem::path& path) noexcept
+{
+    std::ifstream file{path};
+    std::stringstream ss;
+    ss << file.rdbuf();
+    auto fileData = ss.str();
+    if (m_buffer.deserialize(fileData))
+    {
+        m_buffer.recalcBounds();
+        m_selectType = SelectType::Copy;
+        m_selection.complite();
+        return true;
+    }
+    return false;
+}
+
 void Game::windowProc() noexcept
 {
     while (m_running)
@@ -60,7 +78,8 @@ void Game::windowProc() noexcept
         m_ui.beginDraw(m_window, m_frameDeltaTime);
         m_window.clear(sf::Color(200, 200, 200, 255));
         m_ui.drawMenu(
-            m_running, [this](const std::filesystem::path& path) { m_world.save(path); }, [this](const std::filesystem::path& path) { return m_world.load(path); }, [this]() { m_world.clear(); });
+            m_running, [this](const std::filesystem::path& path) { m_world.save(path); }, [this](const std::filesystem::path& path) { return m_world.load(path); },
+            [this](const std::filesystem::path& path) { return loadBufferFromFile(path); }, [this]() { m_world.clear(); });
         if (!m_ui.isInMenu()) m_ui.drawSidebar(m_elementTypes, m_currentId);
         render();
         m_ui.endDraw(m_window);

@@ -8,8 +8,7 @@
 
 #include <ranges>
 
-UI::UI(sf::RenderWindow& window, sf::Texture& atlas, cmrc::file fontBin) 
-: m_atlas{atlas}
+UI::UI(sf::RenderWindow& window, sf::Texture& atlas, cmrc::file fontBin) : m_atlas{atlas}
 {
     IMGUI_CHECKVERSION();
     ImGui::SFML::Init(window);
@@ -42,7 +41,7 @@ void UI::endDraw(sf::RenderWindow& window)
     ImGui::SFML::Render(window);
 }
 
-void UI::drawSidebar(std::vector<std::unique_ptr<Element>>& elementTypes, std::atomic_int& currentId) 
+void UI::drawSidebar(std::vector<std::unique_ptr<Element>>& elementTypes, std::atomic_int& currentId)
 {
     const float BUTTON_SIZE = 75.0f;
     const sf::Color ACTIVE_ELEMENT_BG{0xA0A0A0FF};
@@ -81,10 +80,8 @@ void UI::drawSidebar(std::vector<std::unique_ptr<Element>>& elementTypes, std::a
     ImGui::End();
 }
 
-void UI::drawMenu(std::atomic_bool& running, 
-    std::function<void(const std::filesystem::path& path)> onSave, 
-    std::function<bool(const std::filesystem::path& path)> onLoad,
-    std::function<void()> onNew)
+void UI::drawMenu(std::atomic_bool& running, std::function<void(const std::filesystem::path& path)> onSave, std::function<bool(const std::filesystem::path& path)> onLoad,
+    std::function<bool(const std::filesystem::path& path)> onPaste, std::function<void()> onNew)
 {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Escape)) ImGui::OpenPopup("menu");
 
@@ -105,7 +102,8 @@ void UI::drawMenu(std::atomic_bool& running,
         }
         if (ImGui::Button("Save", buttonSize)) ImGui::OpenPopup("save");
         if (ImGui::Button("Load", buttonSize)) ImGui::OpenPopup("load");
-        if (ImGui::Button("Exit", buttonSize)) running = false;    
+        if (ImGui::Button("Paste", buttonSize)) ImGui::OpenPopup("paste");
+        if (ImGui::Button("Exit", buttonSize)) running = false;
         if (ImGui::BeginPopupModal("load", nullptr, flags))
         {
             ImGui::SetWindowSize(windowSize);
@@ -121,6 +119,31 @@ void UI::drawMenu(std::atomic_bool& running,
                 if (ImGui::Selectable(filename.c_str(), &select))
                 {
                     if (onLoad(path))
+                    {
+                        ImGui::CloseCurrentPopup();
+                        open = false;
+                    }
+                }
+            }
+            ImGui::EndChild();
+            if (ImGui::Button("Back", {-FLT_MIN, 0.0f})) ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+        }
+        if (ImGui::BeginPopupModal("paste", nullptr, flags))
+        {
+            ImGui::SetWindowSize(windowSize);
+            auto currentItem = std::filesystem::path{};
+            ImGui::BeginChild("Saves", {0.0f, -ImGui::GetFrameHeightWithSpacing()});
+            if (!std::filesystem::exists("saves/")) std::filesystem::create_directory("saves/");
+            for (auto pathAndId : std::filesystem::directory_iterator("saves/") | std::views::enumerate)
+            {
+                if (!std::get<1>(pathAndId).is_regular_file()) continue;
+                auto path = std::get<1>(pathAndId).path();
+                auto filename = path.filename().string();
+                auto select = false;
+                if (ImGui::Selectable(filename.c_str(), &select))
+                {
+                    if (onPaste(path))
                     {
                         ImGui::CloseCurrentPopup();
                         open = false;
@@ -163,12 +186,12 @@ void UI::drawMenu(std::atomic_bool& running,
     m_inMenu = open;
 }
 
-void UI::commandMenu() 
+void UI::commandMenu()
 {
     m_inMenu = !m_inMenu;
 }
 
-bool UI::isInMenu() 
+bool UI::isInMenu()
 {
     return m_inMenu;
 }

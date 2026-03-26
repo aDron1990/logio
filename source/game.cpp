@@ -6,6 +6,7 @@
 #include "elements/not.hpp"
 #include "elements/and.hpp"
 #include "elements/tree.hpp"
+#include <SFML/Window/Keyboard.hpp>
 #include <mutex>
 
 Game::Game()
@@ -74,6 +75,12 @@ void Game::updateWindow() noexcept
                 if (event.key.scancode == sf::Keyboard::Scancode::E) m_currentRotation = rotateCW(m_currentRotation);
                 if (event.key.scancode == sf::Keyboard::Scancode::Comma) m_currentUpdateTimeId = std::clamp(m_currentUpdateTimeId + 1, 0, (int)m_updateTimes.size() - 1);
                 if (event.key.scancode == sf::Keyboard::Scancode::Period) m_currentUpdateTimeId = std::clamp(m_currentUpdateTimeId - 1, 0, (int)m_updateTimes.size() - 1);
+                if (event.key.scancode == sf::Keyboard::Scancode::Tab)
+                {
+                    auto view = m_window.getView();
+                    view.setCenter({0, 0});
+                    m_window.setView(view);
+                }
                 if (event.key.scancode >= sf::Keyboard::Scancode::Num1 && event.key.scancode <= sf::Keyboard::Scancode::Num9)
                 {
                     auto number = event.key.scancode - sf::Keyboard::Scancode::Num1;

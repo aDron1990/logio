@@ -31,7 +31,7 @@ void Buffer::clear() noexcept
     m_elements.clear();
 }
 
-void Buffer::rotateCW() noexcept
+void Buffer::rotateCCW() noexcept
 {
     for (auto& element : m_elements)
     {
@@ -39,10 +39,20 @@ void Buffer::rotateCW() noexcept
         auto y = element.y;
         element.x = y;
         element.y = getSize().x - 1 - x;
+        element.rotation = ::rotateCCW(element.rotation);
+    }
+}
+void Buffer::rotateCW() noexcept
+{
+    for (auto& element : m_elements)
+    {
+        auto x = element.x;
+        auto y = element.y;
+        element.x = getSize().y - 1 - y;
+        element.y = x;
         element.rotation = ::rotateCW(element.rotation);
     }
 }
-void Buffer::rotateCCW() noexcept {}
 
 sf::Vector2i Buffer::getSize() const noexcept
 {

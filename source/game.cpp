@@ -79,7 +79,13 @@ void Game::updateWindow() noexcept
             case sf::Event::Closed: m_running = false; break;
             case sf::Event::KeyPressed: {
                 if (event.key.scancode == sf::Keyboard::Scancode::Escape) m_ui.commandMenu();
-                if (event.key.scancode == sf::Keyboard::Scancode::Q) m_currentRotation = rotateCCW(m_currentRotation);
+                if (event.key.scancode == sf::Keyboard::Scancode::Q)
+                {
+                    if (m_selection.isComplited())
+                        m_buffer.rotateCCW();
+                    else
+                        m_currentRotation = rotateCCW(m_currentRotation);
+                }
                 if (event.key.scancode == sf::Keyboard::Scancode::E)
                 {
                     if (m_selection.isComplited())

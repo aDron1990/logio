@@ -11,6 +11,11 @@ void Selection::deactivate() noexcept
     m_state = State::None;
 }
 
+void Selection::complite() noexcept
+{
+    m_state = State::Complited;
+}
+
 bool Selection::isActive() const noexcept
 {
     return m_state != State::None;

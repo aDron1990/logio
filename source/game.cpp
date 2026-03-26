@@ -7,18 +7,21 @@
 #include "elements/not.hpp"
 #include "elements/and.hpp"
 #include "elements/tree.hpp"
+#include "selection.hpp"
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/PrimitiveType.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <SFML/Window/Clipboard.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 
 #include <entt/entity/fwd.hpp>
 #include <mutex>
 #include <vector>
+#include <iostream>
 
 Game::Game()
     : m_window{sf::VideoMode::getDesktopMode(), "logio", 0, sf::ContextSettings{}}, m_resources{cmrc::res::get_filesystem()}, m_ui{m_window, m_atlas, m_resources.open("resources/fonts/ubuntu.ttf")}
@@ -115,6 +118,18 @@ void Game::updateWindow() noexcept
                     m_selectType = SelectType::Copy;
                     m_selection.activate();
                 }
+                if (event.key.scancode == sf::Keyboard::Scancode::V && event.key.control)
+                {
+                    if (m_buffer.deserialize(sf::Clipboard::getString()))
+                    {
+                        m_selectType = SelectType::Copy;
+                        m_selection.complite();
+                    }
+                    else
+                    {
+                        std::cout << "Failed to deser clipboard" << std::endl;
+                    }
+                }
                 if (event.key.scancode == sf::Keyboard::Scancode::Delete || event.key.scancode == sf::Keyboard::Scancode::Backspace)
                 {
                     m_selectType = SelectType::Delete;
@@ -133,6 +148,7 @@ void Game::updateWindow() noexcept
                         if (m_selectType == SelectType::Copy)
                         {
                             m_world.copy(m_buffer, selectionRect);
+                            sf::Clipboard::setString(m_buffer.serialize());
                         }
                         else if (m_selectType == SelectType::Delete)
                         {

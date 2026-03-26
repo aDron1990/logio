@@ -130,6 +130,7 @@ void World::copy(Buffer& buffer, sf::IntRect segment) const noexcept
             buffer.push(data);
         }
     }
+    buffer.recalcBounds();
 }
 
 void World::paste(const Buffer& buffer, sf::Vector2i place) noexcept

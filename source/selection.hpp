@@ -17,6 +17,7 @@ public:
     };
 
 public:
+    void complite() noexcept;
     void activate() noexcept;
     void deactivate() noexcept;
     bool isActive() const noexcept;

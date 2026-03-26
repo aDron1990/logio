@@ -116,12 +116,10 @@ bool World::load(std::filesystem::path path) noexcept
 void World::copy(Buffer& buffer, sf::IntRect segment) const noexcept
 {
     buffer.clear();
-    for (ptrdiff_t i = segment.left; i < segment.left + segment.width; i++)
+    for (ptrdiff_t x = segment.left; x < segment.left + segment.width; x++)
     {
-        for (ptrdiff_t j = segment.top; j < segment.top + segment.height; j++)
+        for (ptrdiff_t y = segment.top; y < segment.top + segment.height; y++)
         {
-            auto x = i;
-            auto y = j;
             auto it = m_grid.find({x, y});
             if (it == m_grid.end()) continue;
 
@@ -140,5 +138,16 @@ void World::paste(const Buffer& buffer, sf::Vector2i place) noexcept
     for (auto& element : elements)
     {
         addElement(element.x + place.x, element.y + place.y, element.typeId, element.rotation);
+    }
+}
+
+void World::clear(sf::IntRect segment) noexcept
+{
+    for (ptrdiff_t x = segment.left; x < segment.left + segment.width; x++)
+    {
+        for (ptrdiff_t y = segment.top; y < segment.top + segment.height; y++)
+        {
+            removeElement(x, y);
+        }
     }
 }

@@ -14,6 +14,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
+
 #include <mutex>
 
 Game::Game()
@@ -79,7 +80,13 @@ void Game::updateWindow() noexcept
             case sf::Event::KeyPressed: {
                 if (event.key.scancode == sf::Keyboard::Scancode::Escape) m_ui.commandMenu();
                 if (event.key.scancode == sf::Keyboard::Scancode::Q) m_currentRotation = rotateCCW(m_currentRotation);
-                if (event.key.scancode == sf::Keyboard::Scancode::E) m_currentRotation = rotateCW(m_currentRotation);
+                if (event.key.scancode == sf::Keyboard::Scancode::E)
+                {
+                    if (m_selection.isComplited())
+                        m_buffer.rotateCW();
+                    else
+                        m_currentRotation = rotateCW(m_currentRotation);
+                }
                 if (event.key.scancode == sf::Keyboard::Scancode::Comma) m_currentUpdateTimeId = std::clamp(m_currentUpdateTimeId + 1, 0, (int)m_updateTimes.size() - 1);
                 if (event.key.scancode == sf::Keyboard::Scancode::Period) m_currentUpdateTimeId = std::clamp(m_currentUpdateTimeId - 1, 0, (int)m_updateTimes.size() - 1);
                 if (event.key.scancode == sf::Keyboard::Scancode::Tab)
@@ -96,30 +103,31 @@ void Game::updateWindow() noexcept
                 }
                 if (event.key.scancode == sf::Keyboard::Scancode::C && event.key.control)
                 {
-                    m_selectionState = SelectionState::FirstClickWait;
-                    m_selection = true;
+                    m_selection.activate();
                 }
                 break;
             }
             case sf::Event::MouseButtonPressed: {
-                if (event.mouseButton.button == sf::Mouse::Left && m_selection)
+                if (!m_selection.isActive()) break;
+                if (event.mouseButton.button == sf::Mouse::Left && !m_selection.isComplited())
                 {
-                    switch (m_selectionState)
+                    m_selection.click(gridPos);
+                    if (m_selection.isComplited())
                     {
-                        case SelectionState::FirstClickWait: {
-                            m_selectionState = SelectionState::SecondClickWait;
-                            m_selectionFirstClick = gridPos;
-                            break;
-                        }
-                        case SelectionState::SecondClickWait: {
-                            m_selectionState = SelectionState::None;
-                            m_selection = false;
-                            m_selectionSecondClick = gridPos;
-                            break;
-                        }
-                        default: break;
+                        auto selectionRect = m_selection.getSelectionRect();
+                        m_world.copy(m_buffer, selectionRect);
                     }
+                    m_blockRMB = true;
                 }
+                else if (event.mouseButton.button == sf::Mouse::Left && m_selection.isComplited())
+                {
+                    m_world.paste(m_buffer, gridPos);
+                    m_blockRMB = true;
+                }
+                break;
+            }
+            case sf::Event::MouseButtonReleased: {
+                if (event.mouseButton.button == sf::Mouse::Left) m_blockRMB = false;
                 break;
             }
             case sf::Event::MouseWheelScrolled: {
@@ -141,15 +149,14 @@ void Game::updateWindow() noexcept
     {
         m_world.sendSignal(gridPos.x, gridPos.y);
     }
-    if (!io.WantCaptureMouse && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) && !m_selection)
+    if (!io.WantCaptureMouse && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) && !m_selection.isActive() && !m_blockRMB)
     {
         m_world.addElement(gridPos.x, gridPos.y, m_currentId, m_currentRotation);
     }
     if (!io.WantCaptureMouse && sf::Mouse::isButtonPressed(sf::Mouse::Button::Right))
     {
-        m_selection = false;
-        m_selectionState = SelectionState::None;
-        m_world.removeElement(gridPos.x, gridPos.y);
+        m_selection.deactivate();
+        if (!m_blockRMB) m_world.removeElement(gridPos.x, gridPos.y);
     }
 }
 
@@ -218,51 +225,13 @@ void Game::render() noexcept
         m_window.draw(quads, states);
     }
 
-    if (m_selection)
+    if (m_selection.isSecondClickWait())
     {
-        if (m_selectionState != SelectionState::SecondClickWait) return;
-
         auto pos = sf::Mouse::getPosition();
         auto worldPos = m_window.mapPixelToCoords(pos);
         auto gridPos = m_world.mapCoordsToGrid(worldPos);
 
-        sf::FloatRect selectionRect{};
-        if (gridPos.x < m_selectionFirstClick.x)
-        {
-            selectionRect.left = gridPos.x;
-            selectionRect.width = 1.0f + (m_selectionFirstClick.x - gridPos.x);
-        }
-        else if (gridPos.x == m_selectionFirstClick.x)
-        {
-            selectionRect.left = m_selectionFirstClick.x;
-            selectionRect.width = 1.0f;
-        }
-        else if (gridPos.x > m_selectionFirstClick.x)
-        {
-            selectionRect.left = m_selectionFirstClick.x;
-            selectionRect.width = 1.0f + (gridPos.x - m_selectionFirstClick.x);
-        }
-
-        if (gridPos.y < m_selectionFirstClick.y)
-        {
-            selectionRect.top = gridPos.y;
-            selectionRect.height = 1.0f + (m_selectionFirstClick.y - gridPos.y);
-        }
-        else if (gridPos.y == m_selectionFirstClick.y)
-        {
-            selectionRect.top = m_selectionFirstClick.y;
-            selectionRect.height = 1.0f;
-        }
-        else if (gridPos.y > m_selectionFirstClick.y)
-        {
-            selectionRect.top = m_selectionFirstClick.y;
-            selectionRect.height = 1.0f + (gridPos.y - m_selectionFirstClick.y);
-        }
-
-        selectionRect.left *= SPRITE_SIZE;
-        selectionRect.top *= SPRITE_SIZE;
-        selectionRect.width *= SPRITE_SIZE;
-        selectionRect.height *= SPRITE_SIZE;
+        auto selectionRect = m_selection.getSeceltionForDraw(gridPos);
 
         sf::VertexArray selection{sf::PrimitiveType::Lines, 8};
         selection[0].position = sf::Vector2f{selectionRect.left, selectionRect.top};
@@ -288,7 +257,27 @@ void Game::render() noexcept
 
         m_window.draw(selection);
     }
-    else
+    else if (m_selection.isComplited())
+    {
+        auto pos = sf::Mouse::getPosition();
+        auto worldPos = m_window.mapPixelToCoords(pos);
+        auto gridPos = m_world.mapCoordsToGrid(worldPos);
+
+        if (!ImGui::GetIO().WantCaptureMouse && m_window.hasFocus())
+        {
+            for (auto ghostElement : m_buffer.getData())
+            {
+                auto ghostRect = m_elementTypes[ghostElement.typeId]->getDefaultSprite();
+                auto ghost = sf::Sprite{m_atlas, ghostRect};
+                ghost.setColor({255, 255, 255, 150});
+                ghost.setOrigin({static_cast<float>(SPRITE_SIZE) / 2.0f, static_cast<float>(SPRITE_SIZE) / 2.0f});
+                ghost.setPosition({(float)(gridPos.x + ghostElement.x) * SPRITE_SIZE + (float)SPRITE_SIZE / 2, (float)(gridPos.y + ghostElement.y) * SPRITE_SIZE + (float)SPRITE_SIZE / 2});
+                ghost.setRotation(rotationToAngle(ghostElement.rotation));
+                m_window.draw(ghost);
+            }
+        }
+    }
+    else if (!m_selection.isFirstClickWait())
     {
         auto pos = sf::Mouse::getPosition();
         auto worldPos = m_window.mapPixelToCoords(pos);

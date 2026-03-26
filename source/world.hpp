@@ -2,7 +2,9 @@
 
 #include "element_data.hpp"
 #include "rotation.hpp"
+#include "buffer.hpp"
 
+#include <SFML/System/Vector3.hpp>
 #include <cstddef>
 #include <entt/entity/fwd.hpp>
 #include <entt/entt.hpp>
@@ -22,6 +24,8 @@ class World
 public:
     size_t count() const noexcept;
     auto getElementsView() noexcept { return m_registry.view<ElementData>(); }
+    void copy(Buffer& buffer, sf::IntRect segment) const noexcept;
+    void paste(const Buffer& buffer, sf::Vector2i place) noexcept;
 
     void addElement(ptrdiff_t x, ptrdiff_t y, uint8_t id, Rotation rotation) noexcept;
     void removeElement(ptrdiff_t x, ptrdiff_t y) noexcept;

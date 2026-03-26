@@ -1,7 +1,9 @@
 #include "world.hpp"
+#include "buffer.hpp"
 #include "element_data.hpp"
 #include "defines.hpp"
 
+#include <cstddef>
 #include <nlohmann/json.hpp>
 #include <zlib.h>
 
@@ -109,4 +111,34 @@ bool World::load(std::filesystem::path path) noexcept
         return false;
     }
     return true;
+}
+
+void World::copy(Buffer& buffer, sf::IntRect segment) const noexcept
+{
+    buffer.clear();
+    for (ptrdiff_t i = segment.left; i < segment.left + segment.width; i++)
+    {
+        for (ptrdiff_t j = segment.top; j < segment.top + segment.height; j++)
+        {
+            auto x = i;
+            auto y = j;
+            auto it = m_grid.find({x, y});
+            if (it == m_grid.end()) continue;
+
+            auto data = m_registry.get<ElementData>(it->second);
+            data.x -= segment.left;
+            data.y -= segment.top;
+
+            buffer.push(data);
+        }
+    }
+}
+
+void World::paste(const Buffer& buffer, sf::Vector2i place) noexcept
+{
+    auto& elements = buffer.getData();
+    for (auto& element : elements)
+    {
+        addElement(element.x + place.x, element.y + place.y, element.typeId, element.rotation);
+    }
 }

@@ -2,7 +2,9 @@
 
 #include "world.hpp"
 #include "element.hpp"
+#include "selection.hpp"
 #include "ui.hpp"
+#include "buffer.hpp"
 
 #include <SFML/Graphics.hpp>
 #include <SFML/OpenGL.hpp>
@@ -12,6 +14,7 @@
 #include <imgui-SFML.h>
 #include <entt/entt.hpp>
 
+#include <memory>
 #include <thread>
 #include <atomic>
 #include <mutex>
@@ -52,16 +55,10 @@ private:
     const std::vector<int> m_updateTimes = {10, 25, 50, 100, 250, 500, 1000};
     std::atomic_int m_currentUpdateTimeId{0};
     std::mutex m_mutex;
-    std::atomic_bool m_selection = false;
-    enum class SelectionState
-    {
-        None,
-        FirstClickWait,
-        SecondClickWait
-    };
-    std::atomic<SelectionState> m_selectionState{SelectionState::None};
-    sf::Vector2i m_selectionFirstClick;
-    sf::Vector2i m_selectionSecondClick;
+    bool m_blockRMB = false;
+    Buffer m_buffer;
+
+    Selection m_selection;
 
     World m_world;
     UI m_ui;

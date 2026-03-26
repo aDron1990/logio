@@ -25,6 +25,10 @@ add_executable(logio
     source/rotation.hpp
     source/element_data.hpp
     source/element.hpp
+    source/selection.cpp
+    source/selection.hpp
+    source/buffer.cpp
+    source/buffer.hpp
 
     source/elements/wire.cpp
     source/elements/wire.hpp

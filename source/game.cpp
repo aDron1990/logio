@@ -42,7 +42,7 @@ Game::Game()
     m_elementTypes.emplace_back(std::make_unique<Jump>(sf::IntRect{384, 0, 256, 256}, sf::IntRect{384, 384, 256, 256}));
     m_elementTypes.emplace_back(std::make_unique<Not>(sf::IntRect{0, 1664, 256, 256}, sf::IntRect{0, 2048, 256, 256}));
     m_elementTypes.emplace_back(std::make_unique<And>(sf::IntRect{384, 1664, 256, 256}, sf::IntRect{384, 2048, 256, 256}, sf::IntRect{768, 1664, 256, 256}));
-    m_elementTypes.emplace_back(std::make_unique<Tree>(sf::IntRect{0, 896, 256, 256}, sf::IntRect{0, 1280, 256, 256}));
+    m_elementTypes.emplace_back(std::make_unique<Tree>(sf::IntRect{384, 896, 256, 256}, sf::IntRect{384, 1280, 256, 256}));
     m_elementTypes.emplace_back(std::make_unique<ForwardSplitter>(sf::IntRect{0, 896, 256, 256}, sf::IntRect{0, 1280, 256, 256}));
 }
 

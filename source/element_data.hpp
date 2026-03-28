@@ -8,8 +8,8 @@ struct ElementData
 {
     Rotation rotation;
     uint8_t typeId;
-    uint8_t currentSignal{};
-    uint8_t nextSignal{};
+    int8_t currentSignal{};
+    int8_t nextSignal{};
     ptrdiff_t x;
     ptrdiff_t y;
 };

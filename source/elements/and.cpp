@@ -2,7 +2,7 @@
 
 And::And(sf::IntRect disableSprite, sf::IntRect activeSprite, sf::IntRect semiActiveSprite) : m_disableSprite{disableSprite}, m_activeSprite{activeSprite}, m_semiActiveSprite{semiActiveSprite} {}
 
-void And::onUpdate(World& world, const ElementData& element) noexcept
+void And::onUpdate(World& world, ElementData& element) noexcept
 {
     if (element.currentSignal < 2) return;
     auto [x, y] = rotationToVector(element.rotation);
@@ -11,7 +11,7 @@ void And::onUpdate(World& world, const ElementData& element) noexcept
 
 sf::IntRect And::getSprite(const ElementData& element) const noexcept
 {
-    if (element.currentSignal == 0)
+    if (element.currentSignal <= 0)
         return m_disableSprite;
     else if (element.currentSignal == 1)
         return m_semiActiveSprite;

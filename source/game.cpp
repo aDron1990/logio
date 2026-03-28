@@ -10,6 +10,9 @@
 #include "elements/forward_splitter.hpp"
 #include "elements/fr_splitter.hpp"
 #include "elements/side_splitter.hpp"
+#include "elements/extractor.hpp"
+#include "elements/blocker.hpp"
+
 #include "selection.hpp"
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/PrimitiveType.hpp>
@@ -48,6 +51,8 @@ Game::Game()
     m_elementTypes.emplace_back(std::make_unique<FRSplitter>(sf::IntRect{1152, 896, 256, 256}, sf::IntRect{1152, 1280, 256, 256}));
     m_elementTypes.emplace_back(std::make_unique<SideSplitter>(sf::IntRect{768, 896, 256, 256}, sf::IntRect{768, 1280, 256, 256}));
     m_elementTypes.emplace_back(std::make_unique<ForwardSplitter>(sf::IntRect{0, 896, 256, 256}, sf::IntRect{0, 1280, 256, 256}));
+    m_elementTypes.emplace_back(std::make_unique<Extractor>(sf::IntRect{768, 0, 256, 256}, sf::IntRect{768, 384, 256, 256}));
+    m_elementTypes.emplace_back(std::make_unique<Blocker>(sf::IntRect{1152, 0, 256, 256}, sf::IntRect{1152, 384, 256, 256}));
 }
 
 void Game::run()
@@ -388,7 +393,11 @@ void Game::updateField() noexcept
 
     for (auto [_, elementData] : elements.each())
     {
-        elementData.currentSignal = elementData.nextSignal;
+        if (elementData.currentSignal >= 0)
+            elementData.currentSignal = elementData.nextSignal;
+        else
+            elementData.currentSignal = 0;
+
         elementData.nextSignal = 0;
     }
 }

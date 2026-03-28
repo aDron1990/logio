@@ -120,8 +120,8 @@ bool Buffer::deserialize(const std::string& str) noexcept
             auto x = cellJson["coords"][0].get<ptrdiff_t>();
             auto y = cellJson["coords"][1].get<ptrdiff_t>();
             auto typeId = cellJson["type_id"].get<uint8_t>();
-            auto currentSignal = cellJson["current_signal"].get<uint8_t>();
-            auto nextSignal = cellJson["next_signal"].get<uint8_t>();
+            auto currentSignal = cellJson["current_signal"].get<int8_t>();
+            auto nextSignal = cellJson["next_signal"].get<int8_t>();
             auto rotation = static_cast<Rotation>(cellJson["rotation"].get<float>());
 
             elements.push_back(ElementData{.rotation = rotation, .typeId = typeId, .currentSignal = currentSignal, .nextSignal = nextSignal, .x = x, .y = y});

@@ -2,7 +2,7 @@
 
 Not::Not(sf::IntRect disableSprite, sf::IntRect activeSprite) : m_disableSprite{disableSprite}, m_activeSprite{activeSprite} {}
 
-void Not::onUpdate(World& world, const ElementData& element) noexcept
+void Not::onUpdate(World& world, ElementData& element) noexcept
 {
     if (element.currentSignal != 0) return;
     auto [x, y] = rotationToVector(element.rotation);
@@ -11,7 +11,7 @@ void Not::onUpdate(World& world, const ElementData& element) noexcept
 
 sf::IntRect Not::getSprite(const ElementData& element) const noexcept
 {
-    if (element.currentSignal == 0) return m_disableSprite;
+    if (element.currentSignal <= 0) return m_disableSprite;
     return m_activeSprite;
 }
 

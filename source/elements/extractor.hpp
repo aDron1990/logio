@@ -2,10 +2,10 @@
 
 #include "element.hpp"
 
-class Wire : public Element
+class Extractor : public Element
 {
 public:
-    Wire(sf::IntRect disableSprite, sf::IntRect activeSprite);
+    Extractor(sf::IntRect disableSprite, sf::IntRect activeSprite);
     void onUpdate(World& world, ElementData& element) noexcept override;
     sf::IntRect getSprite(const ElementData& element) const noexcept override;
     sf::IntRect getDefaultSprite() const noexcept override;

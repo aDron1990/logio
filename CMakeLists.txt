@@ -46,6 +46,10 @@ add_executable(logio
     source/elements/fr_splitter.hpp
     source/elements/side_splitter.cpp
     source/elements/side_splitter.hpp
+    source/elements/extractor.cpp
+    source/elements/extractor.hpp
+    source/elements/blocker.cpp
+    source/elements/blocker.hpp
 )
 
 cmrc_add_resource_library(res

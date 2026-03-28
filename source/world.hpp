@@ -28,9 +28,11 @@ public:
     void paste(const Buffer& buffer, sf::Vector2i place) noexcept;
     void clear(sf::IntRect segment) noexcept;
 
+    std::optional<ElementData> getElement(ptrdiff_t x, ptrdiff_t y) noexcept;
     void addElement(ptrdiff_t x, ptrdiff_t y, uint8_t id, Rotation rotation) noexcept;
     void removeElement(ptrdiff_t x, ptrdiff_t y) noexcept;
     void sendSignal(ptrdiff_t x, ptrdiff_t y) noexcept;
+    void blockSignal(ptrdiff_t x, ptrdiff_t y) noexcept;
 
     sf::Vector2i mapCoordsToGrid(sf::Vector2f worldPos) const noexcept;
 

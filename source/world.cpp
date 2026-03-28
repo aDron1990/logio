@@ -5,10 +5,19 @@
 
 #include <cstddef>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <zlib.h>
 
 #include <fstream>
 #include <cmath>
+
+std::optional<ElementData> World::getElement(ptrdiff_t x, ptrdiff_t y) noexcept
+{
+    auto it = m_grid.find(Coord{x, y});
+    if (it == m_grid.end()) return std::nullopt;
+
+    return m_registry.get<ElementData>(it->second);
+}
 
 void World::addElement(ptrdiff_t x, ptrdiff_t y, uint8_t id, Rotation rotation) noexcept
 {
@@ -36,7 +45,18 @@ void World::sendSignal(ptrdiff_t x, ptrdiff_t y) noexcept
 
     auto entity = it->second;
     auto& elementData = m_registry.get<ElementData>(entity);
-    elementData.nextSignal++;
+    if (elementData.currentSignal >= 0) 
+        elementData.nextSignal++;
+}
+
+void World::blockSignal(ptrdiff_t x, ptrdiff_t y) noexcept
+{
+    auto it = m_grid.find(Coord{x, y});
+    if (it == m_grid.end()) return;
+
+    auto entity = it->second;
+    auto& elementData = m_registry.get<ElementData>(entity);
+    elementData.nextSignal = -1;
 }
 
 sf::Vector2i World::mapCoordsToGrid(sf::Vector2f worldPos) const noexcept
@@ -92,8 +112,8 @@ bool World::load(std::filesystem::path path) noexcept
             auto x = cellJson["coords"][0].get<ptrdiff_t>();
             auto y = cellJson["coords"][1].get<ptrdiff_t>();
             auto typeId = cellJson["type_id"].get<uint8_t>();
-            auto currentSignal = cellJson["current_signal"].get<uint8_t>();
-            auto nextSignal = cellJson["next_signal"].get<uint8_t>();
+            auto currentSignal = cellJson["current_signal"].get<int8_t>();
+            auto nextSignal = cellJson["next_signal"].get<int8_t>();
             auto rotation = static_cast<Rotation>(cellJson["rotation"].get<float>());
 
             auto entity = new_registry.create();

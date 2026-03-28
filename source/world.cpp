@@ -45,8 +45,7 @@ void World::sendSignal(ptrdiff_t x, ptrdiff_t y) noexcept
 
     auto entity = it->second;
     auto& elementData = m_registry.get<ElementData>(entity);
-    if (elementData.currentSignal >= 0) 
-        elementData.nextSignal++;
+    if (elementData.currentSignal >= 0) elementData.nextSignal++;
 }
 
 void World::blockSignal(ptrdiff_t x, ptrdiff_t y) noexcept

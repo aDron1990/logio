@@ -12,6 +12,7 @@
 #include "elements/side_splitter.hpp"
 #include "elements/extractor.hpp"
 #include "elements/blocker.hpp"
+#include "elements/delay.hpp"
 
 #include "selection.hpp"
 #include <SFML/Graphics/Color.hpp>
@@ -53,6 +54,7 @@ Game::Game()
     m_elementTypes.emplace_back(std::make_unique<ForwardSplitter>(sf::IntRect{0, 896, 256, 256}, sf::IntRect{0, 1280, 256, 256}));
     m_elementTypes.emplace_back(std::make_unique<Extractor>(sf::IntRect{768, 0, 256, 256}, sf::IntRect{768, 384, 256, 256}));
     m_elementTypes.emplace_back(std::make_unique<Blocker>(sf::IntRect{1152, 0, 256, 256}, sf::IntRect{1152, 384, 256, 256}));
+    m_elementTypes.emplace_back(std::make_unique<Delay>(sf::IntRect{1536, 0, 256, 256}, sf::IntRect{1536, 384, 256, 256}, sf::IntRect{1920, 0, 256, 256}));
 }
 
 void Game::run()
@@ -86,7 +88,7 @@ void Game::windowProc() noexcept
         updateWindow();
         updateCamera();
         m_ui.beginDraw(m_window, m_frameDeltaTime);
-        m_window.clear(sf::Color(200, 200, 200, 255));
+        m_window.clear(sf::Color(0xb8, 0xc4, 0xbb, 0xff));
         m_ui.drawMenu(
             m_running, [this](const std::filesystem::path& path) { m_world.save(path); }, [this](const std::filesystem::path& path) { return m_world.load(path); },
             [this](const std::filesystem::path& path) { return loadBufferFromFile(path); }, [this]() { m_world.clear(); });
@@ -274,7 +276,7 @@ void Game::render() noexcept
         auto view = m_world.getElementsView();
         for (auto [_, element] : view.each())
         {
-            auto rect = m_elementTypes[element.typeId]->getSprite(element);
+            auto rect = m_elementTypes[element.typeId]->getSprite(m_world, element);
 
             quads[quadCount * 4 + 0].position = sf::Vector2f(0.f + element.x * SPRITE_SIZE, 0.f + element.y * SPRITE_SIZE);
             quads[quadCount * 4 + 1].position = sf::Vector2f(SPRITE_SIZE + element.x * SPRITE_SIZE, 0.f + element.y * SPRITE_SIZE);
@@ -393,11 +395,7 @@ void Game::updateField() noexcept
 
     for (auto [_, elementData] : elements.each())
     {
-        if (elementData.currentSignal >= 0)
-            elementData.currentSignal = elementData.nextSignal;
-        else
-            elementData.currentSignal = 0;
-
-        elementData.nextSignal = 0;
+        auto& element = m_elementTypes[elementData.typeId];
+        element->onUpdateEnd(m_world, elementData);
     }
 }

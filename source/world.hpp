@@ -10,6 +10,8 @@
 #include <entt/entt.hpp>
 #include <SFML/Graphics.hpp>
 
+#include <functional>
+#include <optional>
 #include <unordered_map>
 #include <cstdint>
 #include <filesystem>
@@ -27,6 +29,31 @@ public:
     void copy(Buffer& buffer, sf::IntRect segment) const noexcept;
     void paste(const Buffer& buffer, sf::Vector2i place) noexcept;
     void clear(sf::IntRect segment) noexcept;
+
+    template <typename T>
+    bool hasComponent(ptrdiff_t x, ptrdiff_t y) const noexcept
+    {
+        auto it = m_grid.find(Coord{x, y});
+        if (it == m_grid.end()) return false;
+        return m_registry.all_of<T>(it->second);
+    }
+
+    template <typename T>
+    void addComponent(ptrdiff_t x, ptrdiff_t y, T&& component) noexcept
+    {
+        auto it = m_grid.find(Coord{x, y});
+        if (it == m_grid.end()) return;
+        m_registry.emplace_or_replace<T>(it->second, std::forward<T>(component));
+    }
+
+    template <typename T>
+    std::optional<std::reference_wrapper<T>> getComponent(ptrdiff_t x, ptrdiff_t y) noexcept
+    {
+        auto it = m_grid.find(Coord{x, y});
+        if (it == m_grid.end()) return std::nullopt;
+        if (!m_registry.all_of<T>(it->second)) return std::nullopt;
+        return m_registry.get<T>(it->second);
+    }
 
     std::optional<ElementData> getElement(ptrdiff_t x, ptrdiff_t y) noexcept;
     void addElement(ptrdiff_t x, ptrdiff_t y, uint8_t id, Rotation rotation) noexcept;

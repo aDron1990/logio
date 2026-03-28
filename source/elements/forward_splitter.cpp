@@ -10,7 +10,7 @@ void ForwardSplitter::onUpdate(World& world, ElementData& element) noexcept
     world.sendSignal(x * 2 + element.x, y * 2 + element.y);
 }
 
-sf::IntRect ForwardSplitter::getSprite(const ElementData& element) const noexcept
+sf::IntRect ForwardSplitter::getSprite(World& world, const ElementData& element) const noexcept
 {
     if (element.currentSignal <= 0) return m_disableSprite;
     return m_activeSprite;

@@ -7,7 +7,7 @@ class FRSplitter : public Element
 public:
     FRSplitter(sf::IntRect disableSprite, sf::IntRect activeSprite);
     void onUpdate(World& world, ElementData& element) noexcept override;
-    sf::IntRect getSprite(const ElementData& element) const noexcept override;
+    sf::IntRect getSprite(World& world, const ElementData& element) const noexcept override;
     sf::IntRect getDefaultSprite() const noexcept override;
 
 private:

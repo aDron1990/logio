@@ -10,7 +10,7 @@ void Wire::onUpdate(World& world, ElementData& element) noexcept
     world.sendSignal(element.x + x, element.y + y);
 }
 
-sf::IntRect Wire::getSprite(const ElementData& element) const noexcept
+sf::IntRect Wire::getSprite(World& world, const ElementData& element) const noexcept
 {
     if (element.currentSignal <= 0) return m_disableSprite;
     return m_activeSprite;

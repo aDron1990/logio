@@ -10,7 +10,7 @@ void Blocker::onUpdate(World& world, ElementData& element) noexcept
     world.blockSignal(element.x + x, element.y + y);
 }
 
-sf::IntRect Blocker::getSprite(const ElementData& element) const noexcept
+sf::IntRect Blocker::getSprite(World& world, const ElementData& element) const noexcept
 {
     if (element.currentSignal <= 0) return m_disableSprite;
     return m_activeSprite;

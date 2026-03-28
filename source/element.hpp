@@ -14,7 +14,7 @@ public:
     virtual void onUpdate(World& world, ElementData& element) noexcept = 0;
     virtual void onUpdateEnd(World& world, ElementData& element) noexcept
     {
-        if (element.currentSignal >= 0)
+        if (element.nextSignal >= 0)
             element.currentSignal = element.nextSignal;
         else
             element.currentSignal = 0;

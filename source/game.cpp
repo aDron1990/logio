@@ -37,10 +37,11 @@ Game::Game()
     : m_window{sf::VideoMode::getDesktopMode(), "logio", 0, sf::ContextSettings{}}, m_resources{cmrc::res::get_filesystem()}, m_ui{m_window, m_atlas, m_resources.open("resources/fonts/ubuntu.ttf")}
 {
     m_window.setVerticalSyncEnabled(true);
+    m_window.setKeyRepeatEnabled(false);
     auto view = m_window.getView();
     view.setCenter({0, 0});
     m_window.setView(view);
-
+    
     auto atlasFile = m_resources.open("resources/images/atlas.png");
     m_atlas.loadFromMemory(atlasFile.begin(), atlasFile.size());
     // m_atlas.generateMipmap();
@@ -143,6 +144,7 @@ void Game::updateWindow() noexcept
                 if (event.key.scancode == sf::Keyboard::Scancode::Space)
                 {
                     m_world.sendSignal(gridPos.x, gridPos.y);
+                     std::cout << "Space" << std::endl;
                 }
                 if (event.key.scancode >= sf::Keyboard::Scancode::Num1 && event.key.scancode <= sf::Keyboard::Scancode::Num9)
                 {

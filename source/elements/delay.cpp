@@ -24,7 +24,7 @@ void Delay::onUpdateEnd(World& world, ElementData& element) noexcept
     auto delay = world.getComponent<DelayData>(element.x, element.y);
     if (!delay) return;
 
-    if (element.currentSignal >= 0)
+    if (element.nextSignal >= 0)
         element.currentSignal = delay->get().delaySignal;
     else
         element.currentSignal = 0;
@@ -42,9 +42,9 @@ sf::IntRect Delay::getSprite(World& world, const ElementData& element) const noe
     auto delay = world.getComponent<DelayData>(element.x, element.y);
     if (!delay) getDefaultSprite();
 
+    if (element.currentSignal > 0) return m_activeSprite;
     if (delay->get().delaySignal > 0) return m_delaySprite;
-    if (element.currentSignal <= 0) return m_disableSprite;
-    return m_activeSprite;
+    return m_disableSprite;
 }
 
 sf::IntRect Delay::getDefaultSprite() const noexcept

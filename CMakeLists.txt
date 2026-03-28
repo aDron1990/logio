@@ -52,6 +52,8 @@ add_executable(logio
     source/elements/blocker.hpp
     source/elements/delay.cpp
     source/elements/delay.hpp
+    source/elements/memory.cpp
+    source/elements/memory.hpp
 )
 
 cmrc_add_resource_library(res

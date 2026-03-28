@@ -13,6 +13,7 @@
 #include "elements/extractor.hpp"
 #include "elements/blocker.hpp"
 #include "elements/delay.hpp"
+#include "elements/memory.hpp"
 
 #include "selection.hpp"
 #include <SFML/Graphics/Color.hpp>
@@ -55,6 +56,7 @@ Game::Game()
     m_elementTypes.emplace_back(std::make_unique<Extractor>(sf::IntRect{768, 0, 256, 256}, sf::IntRect{768, 384, 256, 256}));
     m_elementTypes.emplace_back(std::make_unique<Blocker>(sf::IntRect{1152, 0, 256, 256}, sf::IntRect{1152, 384, 256, 256}));
     m_elementTypes.emplace_back(std::make_unique<Delay>(sf::IntRect{1536, 0, 256, 256}, sf::IntRect{1536, 384, 256, 256}, sf::IntRect{1920, 0, 256, 256}));
+    m_elementTypes.emplace_back(std::make_unique<Memory>(sf::IntRect{1152, 1664, 256, 256}, sf::IntRect{1152, 2048, 256, 256}));
 }
 
 void Game::run()
@@ -138,6 +140,10 @@ void Game::updateWindow() noexcept
                     view.setCenter({0, 0});
                     m_window.setView(view);
                 }
+                if (event.key.scancode == sf::Keyboard::Scancode::Space)
+                {
+                    m_world.sendSignal(gridPos.x, gridPos.y);
+                }
                 if (event.key.scancode >= sf::Keyboard::Scancode::Num1 && event.key.scancode <= sf::Keyboard::Scancode::Num9)
                 {
                     auto number = event.key.scancode - sf::Keyboard::Scancode::Num1;
@@ -215,10 +221,6 @@ void Game::updateWindow() noexcept
 
     if (!m_window.hasFocus()) return;
     std::unique_lock lock{m_mutex};
-    if (!io.WantCaptureMouse && sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
-    {
-        m_world.sendSignal(gridPos.x, gridPos.y);
-    }
     if (!io.WantCaptureMouse && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) && !m_selection.isActive() && !m_blockRMB)
     {
         m_world.addElement(gridPos.x, gridPos.y, m_currentId, m_currentRotation);

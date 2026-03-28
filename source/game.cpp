@@ -7,6 +7,7 @@
 #include "elements/not.hpp"
 #include "elements/and.hpp"
 #include "elements/tree.hpp"
+#include "elements/forward_splitter.hpp"
 #include "selection.hpp"
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/PrimitiveType.hpp>
@@ -31,18 +32,18 @@ Game::Game()
     m_window.setVerticalSyncEnabled(true);
     auto view = m_window.getView();
     view.setCenter({0, 0});
-    view.zoom(0.1);
     m_window.setView(view);
 
     auto atlasFile = m_resources.open("resources/images/atlas.png");
     m_atlas.loadFromMemory(atlasFile.begin(), atlasFile.size());
-    m_signalSprite = sf::Sprite{m_atlas, {0, 0, 16, 16}};
+    // m_atlas.generateMipmap();
 
-    m_elementTypes.emplace_back(std::make_unique<Wire>(sf::IntRect{16 * 1 + 1, 0, 16, 16}, sf::IntRect{16 * 1 + 1, 16 * 1 + 1, 16, 16}));
-    m_elementTypes.emplace_back(std::make_unique<Jump>(sf::IntRect{16 * 2 + 2, 0, 16, 16}, sf::IntRect{16 * 2 + 2, 16 * 1 + 1, 16, 16}));
-    m_elementTypes.emplace_back(std::make_unique<Not>(sf::IntRect{16 * 3 + 3, 0, 16, 16}, sf::IntRect{16 * 3 + 3, 16 * 1 + 1, 16, 16}));
-    m_elementTypes.emplace_back(std::make_unique<And>(sf::IntRect{16 * 4 + 4, 0, 16, 16}, sf::IntRect{16 * 4 + 4, 16 * 2 + 2, 16, 16}, sf::IntRect{16 * 4 + 4, 16 * 1 + 1, 16, 16}));
-    m_elementTypes.emplace_back(std::make_unique<Tree>(sf::IntRect{16 * 5 + 5, 0, 16, 16}, sf::IntRect{16 * 5 + 5, 16 * 1 + 1, 16, 16}));
+    m_elementTypes.emplace_back(std::make_unique<Wire>(sf::IntRect{0, 0, 256, 256}, sf::IntRect{0, 384, 256, 256}));
+    m_elementTypes.emplace_back(std::make_unique<Jump>(sf::IntRect{384, 0, 256, 256}, sf::IntRect{384, 384, 256, 256}));
+    m_elementTypes.emplace_back(std::make_unique<Not>(sf::IntRect{0, 1664, 256, 256}, sf::IntRect{0, 2048, 256, 256}));
+    m_elementTypes.emplace_back(std::make_unique<And>(sf::IntRect{384, 1664, 256, 256}, sf::IntRect{384, 2048, 256, 256}, sf::IntRect{768, 1664, 256, 256}));
+    m_elementTypes.emplace_back(std::make_unique<Tree>(sf::IntRect{0, 896, 256, 256}, sf::IntRect{0, 1280, 256, 256}));
+    m_elementTypes.emplace_back(std::make_unique<ForwardSplitter>(sf::IntRect{0, 896, 256, 256}, sf::IntRect{0, 1280, 256, 256}));
 }
 
 void Game::run()

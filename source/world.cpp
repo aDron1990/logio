@@ -71,8 +71,11 @@ void World::sendSignal(ptrdiff_t x, ptrdiff_t y) noexcept
     if (!chunkElement.element) return;
 
     auto entity = chunkElement.element.value();
-    auto& elementData = m_registry.get<ElementData>(entity);
-    if (elementData.currentSignal >= 0) elementData.nextSignal++;
+    if (m_registry.all_of<ElementData>(entity))
+    {
+        auto& elementData = m_registry.get<ElementData>(entity);
+        if (elementData.currentSignal >= 0) elementData.nextSignal++;
+    }
 }
 
 void World::blockSignal(ptrdiff_t x, ptrdiff_t y) noexcept

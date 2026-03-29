@@ -3,6 +3,7 @@
 #include "element_data.hpp"
 #include "rotation.hpp"
 #include "buffer.hpp"
+#include "chunk.hpp"
 
 #include <SFML/System/Vector3.hpp>
 #include <cstddef>
@@ -26,38 +27,50 @@ class World
 public:
     size_t count() const noexcept;
     auto getElementsView() noexcept { return m_registry.view<ElementData>(); }
-    void copy(Buffer& buffer, sf::IntRect segment) const noexcept;
+    void copy(Buffer& buffer, sf::IntRect segment) noexcept;
     void paste(const Buffer& buffer, sf::Vector2i place) noexcept;
     void clear(sf::IntRect segment) noexcept;
 
     template <typename T>
     bool hasComponent(ptrdiff_t x, ptrdiff_t y) const noexcept
     {
-        auto it = m_grid.find(Coord{x, y});
-        if (it == m_grid.end()) return false;
-        return m_registry.all_of<T>(it->second);
+        auto [cx, cy] = Chunk::toChunkCoords(x, y);
+        auto chunkIt = m_chunks.find(Coord{cx, cy});
+        if (chunkIt == m_chunks.end()) return false;
+
+        auto chunkElement = chunkIt->second.getElement(x, y);
+        if (!chunkElement.element) return false;
+        return m_registry.all_of<T>(chunkElement.element.value());
     }
 
     template <typename T>
     void addComponent(ptrdiff_t x, ptrdiff_t y, T&& component) noexcept
     {
-        auto it = m_grid.find(Coord{x, y});
-        if (it == m_grid.end()) return;
-        m_registry.emplace_or_replace<T>(it->second, std::forward<T>(component));
+        auto [cx, cy] = Chunk::toChunkCoords(x, y);
+        auto chunkIt = m_chunks.find(Coord{cx, cy});
+        if (chunkIt == m_chunks.end()) return;
+
+        auto chunkElement = chunkIt->second.getElement(x, y);
+        if (!chunkElement.element) return;
+        m_registry.emplace_or_replace<T>(chunkElement.element.value());
     }
 
     template <typename T>
     std::optional<std::reference_wrapper<T>> getComponent(ptrdiff_t x, ptrdiff_t y) noexcept
     {
-        auto it = m_grid.find(Coord{x, y});
-        if (it == m_grid.end()) return std::nullopt;
-        if (!m_registry.all_of<T>(it->second)) return std::nullopt;
-        return m_registry.get<T>(it->second);
+        auto [cx, cy] = Chunk::toChunkCoords(x, y);
+        auto chunkIt = m_chunks.find(Coord{cx, cy});
+        if (chunkIt == m_chunks.end()) return std::nullopt;
+
+        auto chunkElement = chunkIt->second.getElement(x, y);
+        if (!chunkElement.element) return std::nullopt;
+
+        return m_registry.get<T>(chunkElement.element.value());
     }
 
     std::optional<ElementData> getElement(ptrdiff_t x, ptrdiff_t y) noexcept;
     void addElement(ptrdiff_t x, ptrdiff_t y, uint8_t id, Rotation rotation) noexcept;
-    void removeElement(ptrdiff_t x, ptrdiff_t y) noexcept;
+    bool removeElement(ptrdiff_t x, ptrdiff_t y) noexcept;
     void sendSignal(ptrdiff_t x, ptrdiff_t y) noexcept;
     void blockSignal(ptrdiff_t x, ptrdiff_t y) noexcept;
 
@@ -69,6 +82,7 @@ public:
 
 private:
     entt::registry m_registry;
-    std::unordered_map<Coord, entt::entity, CoordHash> m_grid;
+    // std::unordered_map<Coord, entt::entity, CoordHash> m_grid;
+    std::unordered_map<Coord, Chunk, CoordHash> m_chunks;
     size_t m_count = 0;
 };

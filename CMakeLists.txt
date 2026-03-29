@@ -22,6 +22,7 @@ add_executable(logio
     source/grid.hpp
     source/world.cpp
     source/world.hpp
+    source/chunk.hpp
     source/rotation.hpp
     source/element_data.hpp
     source/element.hpp

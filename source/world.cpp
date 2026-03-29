@@ -1,5 +1,6 @@
 #include "world.hpp"
 #include "buffer.hpp"
+#include "chunk.hpp"
 #include "element_data.hpp"
 #include "defines.hpp"
 
@@ -13,47 +14,77 @@
 
 std::optional<ElementData> World::getElement(ptrdiff_t x, ptrdiff_t y) noexcept
 {
-    auto it = m_grid.find(Coord{x, y});
-    if (it == m_grid.end()) return std::nullopt;
+    auto [cx, cy] = Chunk::toChunkCoords(x, y);
+    auto chunkIt = m_chunks.find(Coord{cx, cy});
+    if (chunkIt == m_chunks.end()) return std::nullopt;
 
-    return m_registry.get<ElementData>(it->second);
+    auto chunkElement = chunkIt->second.getElement(x, y);
+    if (!chunkElement.element) return std::nullopt;
+
+    return m_registry.get<ElementData>(chunkElement.element.value());
 }
 
 void World::addElement(ptrdiff_t x, ptrdiff_t y, uint8_t id, Rotation rotation) noexcept
 {
-    removeElement(x, y);
     auto entity = m_registry.create();
+
+    auto [cx, cy] = Chunk::toChunkCoords(x, y);
+    auto chunkIt = m_chunks.find(Coord{cx, cy});
+    if (chunkIt == m_chunks.end())
+    {
+        auto newChunk = m_chunks.emplace(Coord{cx, cy}, Chunk{});
+        chunkIt = newChunk.first;
+    }
+
+    auto [lx, ly] = chunkIt->second.toLocalCoords(x, y);
+    ptrdiff_t index = ly * CHUNK_SIZE + lx;
+
+    removeElement(x, y);
+    chunkIt->second.elements[index].element = entity;
     m_registry.emplace_or_replace<ElementData>(entity, ElementData{.rotation = rotation, .typeId = id, .currentSignal = 0, .nextSignal = 0, .x = x, .y = y});
-    if (m_grid.insert_or_assign(Coord{x, y}, entity).second) m_count++;
+    m_count++;
 }
 
-void World::removeElement(ptrdiff_t x, ptrdiff_t y) noexcept
+bool World::removeElement(ptrdiff_t x, ptrdiff_t y) noexcept
 {
-    auto it = m_grid.find(Coord{x, y});
-    if (it == m_grid.end()) return;
+    auto [cx, cy] = Chunk::toChunkCoords(x, y);
+    auto chunkIt = m_chunks.find(Coord{cx, cy});
+    if (chunkIt == m_chunks.end()) return false;
 
-    auto entity = it->second;
+    auto& chunkElement = chunkIt->second.getElement(x, y);
+    if (!chunkElement.element) return false;
+
+    auto entity = chunkElement.element.value();
+    chunkElement.element.reset();
     m_registry.destroy(entity);
-    m_grid.erase(it);
     m_count--;
+    return true;
 }
 
 void World::sendSignal(ptrdiff_t x, ptrdiff_t y) noexcept
 {
-    auto it = m_grid.find(Coord{x, y});
-    if (it == m_grid.end()) return;
+    auto [cx, cy] = Chunk::toChunkCoords(x, y);
+    auto chunkIt = m_chunks.find(Coord{cx, cy});
+    if (chunkIt == m_chunks.end()) return;
 
-    auto entity = it->second;
+    auto chunkElement = chunkIt->second.getElement(x, y);
+    if (!chunkElement.element) return;
+
+    auto entity = chunkElement.element.value();
     auto& elementData = m_registry.get<ElementData>(entity);
     if (elementData.currentSignal >= 0) elementData.nextSignal++;
 }
 
 void World::blockSignal(ptrdiff_t x, ptrdiff_t y) noexcept
 {
-    auto it = m_grid.find(Coord{x, y});
-    if (it == m_grid.end()) return;
+    auto [cx, cy] = Chunk::toChunkCoords(x, y);
+    auto chunkIt = m_chunks.find(Coord{cx, cy});
+    if (chunkIt == m_chunks.end()) return;
 
-    auto entity = it->second;
+    auto chunkElement = chunkIt->second.getElement(x, y);
+    if (!chunkElement.element) return;
+
+    auto entity = chunkElement.element.value();
     auto& elementData = m_registry.get<ElementData>(entity);
     elementData.nextSignal = -1;
 }
@@ -73,7 +104,7 @@ size_t World::count() const noexcept
 void World::clear() noexcept
 {
     m_registry.clear();
-    m_grid.clear();
+    m_chunks.clear();
 }
 
 void World::save(std::filesystem::path path) noexcept
@@ -104,7 +135,7 @@ bool World::load(std::filesystem::path path) noexcept
         if (json.empty()) return false;
 
         entt::registry new_registry;
-        std::unordered_map<Coord, entt::entity, CoordHash> new_grid;
+        std::unordered_map<Coord, Chunk, CoordHash> new_chunks;
 
         for (auto& cellJson : json)
         {
@@ -115,15 +146,28 @@ bool World::load(std::filesystem::path path) noexcept
             auto nextSignal = cellJson["next_signal"].get<int8_t>();
             auto rotation = static_cast<Rotation>(cellJson["rotation"].get<float>());
 
+            auto [cx, cy] = Chunk::toChunkCoords(x, y);
+            auto chunkIt = new_chunks.find({x, y});
+            if (chunkIt == new_chunks.end())
+            {
+                auto [it, _] = new_chunks.emplace(Coord{cx, cy}, Chunk{});
+                chunkIt = it;
+            }
+
             auto entity = new_registry.create();
             new_registry.emplace_or_replace<ElementData>(entity, ElementData{.rotation = rotation, .typeId = typeId, .currentSignal = currentSignal, .nextSignal = nextSignal, .x = x, .y = y});
-            new_grid.insert_or_assign(Coord{x, y}, entity);
+
+            auto [lx, ly] = chunkIt->second.toLocalCoords(x, y);
+            ptrdiff_t index = ly * CHUNK_SIZE + lx;
+            chunkIt->second.elements[index].element = entity;
+            auto chunkElement = chunkIt->second.getElement(x, y);
+            chunkElement.element = entity;
 
             m_count++;
         }
 
         std::swap(new_registry, m_registry);
-        std::swap(new_grid, m_grid);
+        std::swap(new_chunks, m_chunks);
     }
     catch (...)
     {
@@ -132,17 +176,20 @@ bool World::load(std::filesystem::path path) noexcept
     return true;
 }
 
-void World::copy(Buffer& buffer, sf::IntRect segment) const noexcept
+void World::copy(Buffer& buffer, sf::IntRect segment) noexcept
 {
     buffer.clear();
     for (ptrdiff_t x = segment.left; x < segment.left + segment.width; x++)
     {
         for (ptrdiff_t y = segment.top; y < segment.top + segment.height; y++)
         {
-            auto it = m_grid.find({x, y});
-            if (it == m_grid.end()) continue;
+            auto chunkIt = m_chunks.find({x, y});
+            if (chunkIt == m_chunks.end()) continue;
 
-            auto data = m_registry.get<ElementData>(it->second);
+            auto element = chunkIt->second.getElement(x, y);
+            if (!element.element) continue;
+
+            auto data = m_registry.get<ElementData>(element.element.value());
             data.x -= segment.left;
             data.y -= segment.top;
 

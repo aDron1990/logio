@@ -183,7 +183,8 @@ void World::copy(Buffer& buffer, sf::IntRect segment) noexcept
     {
         for (ptrdiff_t y = segment.top; y < segment.top + segment.height; y++)
         {
-            auto chunkIt = m_chunks.find({x, y});
+            auto [cx, cy] = Chunk::toChunkCoords(x, y);
+            auto chunkIt = m_chunks.find({cx, cy});
             if (chunkIt == m_chunks.end()) continue;
 
             auto element = chunkIt->second.getElement(x, y);

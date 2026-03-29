@@ -4,7 +4,7 @@
 
 constexpr auto SPRITE_SIZE = 256;
 
-constexpr auto CHUNK_SIZE = 16;
+constexpr auto CHUNK_SIZE = 256;
 
 inline ptrdiff_t floorDiv(ptrdiff_t a, ptrdiff_t b) noexcept
 {

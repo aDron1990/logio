@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <zlib.h>
 
@@ -125,17 +126,16 @@ void World::save(std::filesystem::path path) noexcept
         json.push_back(cellJson);
     }
     auto file = std::ofstream{path};
-    file << nlohmann::to_string(json);
+    std::vector<uint8_t> data = nlohmann::json::to_msgpack(json);
+    file.write(reinterpret_cast<const char*>(data.data()), data.size());
 }
 
 bool World::load(std::filesystem::path path) noexcept
 {
     try
     {
-        if (!std::filesystem::exists(path)) return false;
-        auto file = std::ifstream{path};
-        auto json = nlohmann::json::parse(file);
-        if (json.empty()) return false;
+        std::ifstream file(path, std::ios::binary);
+        auto json = nlohmann::json::from_msgpack(file);
 
         entt::registry new_registry;
         std::unordered_map<Coord, Chunk, CoordHash> new_chunks;
